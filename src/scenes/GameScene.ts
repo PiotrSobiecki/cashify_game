@@ -9,6 +9,10 @@ import {
   TOUCH,
   BAG,
   FALLING,
+  BOSS_MILESTONES,
+  NPC_MILESTONES,
+  BOSS_PHASE,
+  NPC_POPUP_MS,
 } from "../config";
 import { Player } from "../entities/Player";
 import { FallingItem } from "../entities/FallingItem";
@@ -16,10 +20,14 @@ import { BagSystem } from "../systems/BagSystem";
 import { ScoreSystem } from "../systems/ScoreSystem";
 import { InventorySystem } from "../systems/InventorySystem";
 import { RunController } from "../systems/RunController";
+import { RaceClock } from "../systems/RaceClock";
+import { MilestoneTracker } from "../systems/MilestoneTracker";
 import { resolveCatch } from "../systems/bagCatch";
-import { ITEM_TYPES } from "../data/items";
+import { ITEM_TYPES, BOSS_DROP, type ItemType } from "../data/items";
+import { NPCS } from "../data/npc";
 import { RetroGridBackground } from "../ui/RetroGridBackground";
 import { HUD } from "../ui/HUD";
+import { EmployeePopup } from "../ui/EmployeePopup";
 import { MusicController } from "../systems/MusicController";
 import { Sfx } from "../systems/Sfx";
 import { followDrive } from "../systems/TouchMove";
@@ -40,6 +48,10 @@ export class GameScene extends Phaser.Scene {
   private score!: ScoreSystem;
   private inventory!: InventorySystem;
   private run!: RunController;
+  private clock!: RaceClock;
+  private bossTracker!: MilestoneTracker;
+  private npcTracker!: MilestoneTracker;
+  private popup!: EmployeePopup;
   private hud!: HUD;
   private items!: Phaser.Physics.Arcade.Group;
   private burst!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -48,16 +60,18 @@ export class GameScene extends Phaser.Scene {
   private wasd!: Record<"up" | "down" | "left" | "right", Phaser.Input.Keyboard.Key>;
   private space!: Phaser.Input.Keyboard.Key;
 
-  private startTime = 0;
   private started = false; // czas/spawn startują przy 1. klatce update
   private ended = false;
   private nextSpawnAt = 0;
 
+  // faza bossa: wstrzymuje normalny spawn, zrzuca boss_bary przez ~10 s
+  private bossActive = false;
+  private bossEndsAt = 0;
+  private bossSprite?: Phaser.GameObjects.Image;
+
   private music!: MusicController;
   private sfx!: Sfx;
   private paused = false;
-  private pausedAt = 0;
-  private pausedTotal = 0;
   private pauseOverlay?: Phaser.GameObjects.Text;
 
   // Sterowanie dotykowe: joystick (lewa) = ruch, przycisk (prawa) = WOREK.
@@ -81,13 +95,17 @@ export class GameScene extends Phaser.Scene {
     this.ended = false;
     this.started = false;
     this.paused = false;
-    this.pausedTotal = 0;
     this.nextSpawnAt = 0;
+    this.bossActive = false;
 
     this.bg = new RetroGridBackground(this);
     this.score = new ScoreSystem();
     this.inventory = new InventorySystem();
     this.run = new RunController();
+    this.clock = new RaceClock();
+    this.bossTracker = new MilestoneTracker([...BOSS_MILESTONES]);
+    this.npcTracker = new MilestoneTracker([...NPC_MILESTONES]);
+    this.popup = new EmployeePopup(this);
 
     this.player = new Player(this, SPAWN_X, SPAWN_Y);
     this.bag = new BagSystem(this, this.player);
@@ -140,11 +158,10 @@ export class GameScene extends Phaser.Scene {
     if (this.sys.game.device.input.touch) this.setupTouchControls();
   }
 
-  private spawnItem(x: number): void {
+  private spawnItem(x: number, type: ItemType): void {
     if (this.ended) return;
     const item = this.items.get(x, -20) as FallingItem | null;
     if (!item) return;
-    const type = Phaser.Utils.Array.GetRandom(ITEM_TYPES);
     item.spawn(type, x, -20);
   }
 
@@ -153,7 +170,7 @@ export class GameScene extends Phaser.Scene {
 
     if (!this.started) {
       this.started = true;
-      this.startTime = this.time.now;
+      this.clock.start(this.time.now);
       this.nextSpawnAt = this.time.now;
     }
 
@@ -178,10 +195,19 @@ export class GameScene extends Phaser.Scene {
     // --- worek: przytrzymanie Spacji / przycisku otwiera ---
     this.bag.update(this.space.isDown || this.touchBag);
 
-    // --- spawn przedmiotów ---
+    // --- faza bossa: koniec po 10 s ---
+    if (this.bossActive && time >= this.bossEndsAt) this.endBossPhase();
+
+    // --- spawn: faza bossa zrzuca boss_bary, inaczej normalny katalog ---
     if (time >= this.nextSpawnAt) {
-      this.spawnItem(Phaser.Math.Between(28, GAME_WIDTH - 28));
-      this.nextSpawnAt = time + FALLING.spawnEveryMs;
+      const x = Phaser.Math.Between(28, GAME_WIDTH - 28);
+      if (this.bossActive) {
+        this.spawnItem(x, BOSS_DROP);
+        this.nextSpawnAt = time + BOSS_PHASE.dropEveryMs;
+      } else {
+        this.spawnItem(x, Phaser.Utils.Array.GetRandom(ITEM_TYPES));
+        this.nextSpawnAt = time + FALLING.spawnEveryMs;
+      }
     }
 
     // --- rozstrzygnięcie złap / odbij dla każdego przedmiotu ---
@@ -202,13 +228,13 @@ export class GameScene extends Phaser.Scene {
     }
 
     // --- czas + koniec rundy (timeout; wygrana 3000 dopiero w Fazie 4) ---
-    const elapsed = this.time.now - this.startTime - this.pausedTotal;
+    const elapsed = this.clock.elapsed(this.time.now);
     this.hud.setTime(elapsed, SESSION_MAX_MS);
     const reason = this.run.update(this.score.score, elapsed);
     if (reason) this.end(reason);
   }
 
-  /** Złapanie otwartym workiem → punkty z katalogu + ekwipunek + efekty. */
+  /** Złapanie otwartym workiem → punkty z katalogu + ekwipunek + progi + efekty. */
   private catchItem(item: FallingItem): void {
     this.sfx.enemyDeath();
     this.score.addCatch(item.itemType);
@@ -216,6 +242,56 @@ export class GameScene extends Phaser.Scene {
     this.hud.setRaceProgress(this.score.score);
     this.burst.explode(12, item.x, item.y);
     item.disableBody(true, true);
+    this.checkMilestones();
+  }
+
+  /** Po zmianie wyniku: progi bossów i NPC (każdy raz na rundę). */
+  private checkMilestones(): void {
+    const score = this.score.score;
+    if (this.bossTracker.crossed(score).length > 0) this.startBossPhase();
+    for (const m of this.npcTracker.crossed(score)) this.showNpc(m);
+  }
+
+  /** Start fazy bossa: 10 s deszczu boss_barów, wstrzymanie normalnego spawnu. */
+  private startBossPhase(): void {
+    this.bossActive = true;
+    this.bossEndsAt = this.time.now + BOSS_PHASE.durationMs;
+    this.nextSpawnAt = this.time.now; // od razu pierwszy boss_bar
+    if (!this.bossSprite) {
+      this.bossSprite = this.add
+        .image(GAME_WIDTH / 2, 150, TEXTURE.boss)
+        .setDepth(6);
+      this.tweens.add({
+        targets: this.bossSprite,
+        x: { from: GAME_WIDTH * 0.3, to: GAME_WIDTH * 0.7 },
+        duration: 1400,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.InOut",
+      });
+    }
+    this.cameras.main.flash(180, 255, 0, 170);
+  }
+
+  /** Koniec fazy bossa: chowamy bossa, wracają zwykłe spawny. */
+  private endBossPhase(): void {
+    this.bossActive = false;
+    this.nextSpawnAt = this.time.now;
+    if (this.bossSprite) {
+      this.tweens.killTweensOf(this.bossSprite);
+      this.bossSprite.destroy();
+      this.bossSprite = undefined;
+    }
+  }
+
+  /** Popup pracownika kantoru: zatrzymuje zegar wyścigu na czas wyświetlenia. */
+  private showNpc(milestone: number): void {
+    const npc = NPCS[milestone];
+    if (!npc || this.popup.isActive) return;
+    this.clock.pause(this.time.now);
+    this.popup.show(npc.key, npc.name, npc.line, NPC_POPUP_MS, () => {
+      this.clock.resume(this.time.now);
+    });
   }
 
   /** Kontakt z zamkniętym workiem → przedmiot odbija się, gracz traci HP. */
@@ -330,11 +406,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private togglePause(): void {
-    if (this.ended) return;
+    if (this.ended || this.popup.isActive) return; // nie pauzujemy w trakcie popupu
     this.paused = !this.paused;
     if (this.paused) {
       this.physics.pause();
-      this.pausedAt = this.time.now;
+      this.clock.pause(this.time.now);
       this.pauseOverlay = this.add
         .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "⏸ PAUZA\n\nP — wznów", {
           fontFamily: "monospace",
@@ -348,7 +424,7 @@ export class GameScene extends Phaser.Scene {
         .setDepth(20);
     } else {
       this.physics.resume();
-      this.pausedTotal += this.time.now - this.pausedAt;
+      this.clock.resume(this.time.now);
       this.pauseOverlay?.destroy();
       this.pauseOverlay = undefined;
     }
@@ -363,7 +439,7 @@ export class GameScene extends Phaser.Scene {
     const data: EndData = {
       reason,
       score: this.score.score,
-      timeMs: Math.max(0, this.time.now - this.startTime - this.pausedTotal),
+      timeMs: Math.max(0, this.clock.elapsed(this.time.now)),
     };
     if (reason === "win") {
       this.scene.start("EndScene", data);

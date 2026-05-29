@@ -25,6 +25,15 @@ export const WIN_SCORE = 3000;
 export const BOSS_MILESTONES = [900, 1900, 2900] as const;
 export const NPC_MILESTONES = [1000, 2000, 3000] as const;
 
+/** Faza bossa (Faza 3): 10 s deszczu specjalnych sztabek, wstrzymany normalny spawn. */
+export const BOSS_PHASE = {
+  durationMs: 10000,
+  dropEveryMs: 520,
+} as const;
+
+/** Popup pracownika kantoru — ile trzyma się na ekranie (zegar wyścigu stoi). */
+export const NPC_POPUP_MS = 4000;
+
 /** Liczba żyć w rundzie (PRD #17). Każde życie = pełne HP. */
 export const LIVES = 3;
 

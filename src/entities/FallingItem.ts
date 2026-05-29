@@ -8,6 +8,7 @@ const CATEGORY_TINT: Record<ItemCategory, number> = {
   crypto: COLORS.yellow,
   fiat: COLORS.green,
   metal: COLORS.cyan,
+  boss: COLORS.magenta,
 };
 
 /**

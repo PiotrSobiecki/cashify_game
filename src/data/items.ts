@@ -5,7 +5,7 @@
  * monety 12, sztabki 20–35.
  */
 
-export type ItemCategory = "crypto" | "fiat" | "metal";
+export type ItemCategory = "crypto" | "fiat" | "metal" | "boss";
 
 export interface ItemDef {
   /** Etykieta po polsku do ekranu zdobyczy. */
@@ -42,9 +42,17 @@ export const ITEMS = {
   silver_bar: { label: "Sztabka srebra", points: 22, category: "metal", asset: "metals/silver_bar" },
   gold_coin: { label: "Złota moneta", points: 12, category: "metal", asset: "metals/gold_coin" },
   silver_coin: { label: "Srebrna moneta", points: 12, category: "metal", asset: "metals/silver_coin" },
+
+  // --- Drop bossa (tylko w fazie bossa, poza normalnym spawnem) ---
+  boss_bar: { label: "Sztabka bossa", points: 50, category: "boss", asset: "boss/boss_bar" },
 } as const satisfies Record<string, ItemDef>;
 
 export type ItemType = keyof typeof ITEMS;
 
-/** Wszystkie typy przedmiotów (do spawnu/iteracji). */
-export const ITEM_TYPES = Object.keys(ITEMS) as ItemType[];
+/** Specjalny drop bossa — zrzucany tylko podczas fazy bossa. */
+export const BOSS_DROP: ItemType = "boss_bar";
+
+/** Typy do NORMALNEGO spawnu (bez dropów bossa). */
+export const ITEM_TYPES = (Object.keys(ITEMS) as ItemType[]).filter(
+  (t) => ITEMS[t].category !== "boss",
+);
