@@ -112,7 +112,7 @@ export const API_BASE =
   import.meta.env.VITE_API_BASE ??
   (import.meta.env.DEV
     ? "http://localhost:8787"
-    : "https://firewall-scores.piotr-sobiecki.workers.dev");
+    : "https://cashify-scores.piotr-sobiecki.workers.dev");
 
 /**
  * Audio: utwór leci w pętli przez całą rozgrywkę. Plik w `public/`
