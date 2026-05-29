@@ -14,8 +14,10 @@ import { Player } from "../entities/Player";
 import { FallingItem } from "../entities/FallingItem";
 import { BagSystem } from "../systems/BagSystem";
 import { ScoreSystem } from "../systems/ScoreSystem";
+import { InventorySystem } from "../systems/InventorySystem";
 import { RunController } from "../systems/RunController";
 import { resolveCatch } from "../systems/bagCatch";
+import { ITEM_TYPES } from "../data/items";
 import { RetroGridBackground } from "../ui/RetroGridBackground";
 import { HUD } from "../ui/HUD";
 import { MusicController } from "../systems/MusicController";
@@ -36,6 +38,7 @@ export class GameScene extends Phaser.Scene {
   private player!: Player;
   private bag!: BagSystem;
   private score!: ScoreSystem;
+  private inventory!: InventorySystem;
   private run!: RunController;
   private hud!: HUD;
   private items!: Phaser.Physics.Arcade.Group;
@@ -83,6 +86,7 @@ export class GameScene extends Phaser.Scene {
 
     this.bg = new RetroGridBackground(this);
     this.score = new ScoreSystem();
+    this.inventory = new InventorySystem();
     this.run = new RunController();
 
     this.player = new Player(this, SPAWN_X, SPAWN_Y);
@@ -108,7 +112,7 @@ export class GameScene extends Phaser.Scene {
     this.hud = new HUD(this);
     this.hud.setLives(this.run.lives);
     this.hud.setHp(this.player.hpRatio);
-    this.hud.setScore(0);
+    this.hud.setRaceProgress(0);
     this.hud.setTime(0, SESSION_MAX_MS);
 
     const kb = this.input.keyboard!;
@@ -140,7 +144,8 @@ export class GameScene extends Phaser.Scene {
     if (this.ended) return;
     const item = this.items.get(x, -20) as FallingItem | null;
     if (!item) return;
-    item.spawn(x, -20, FALLING.testPoints);
+    const type = Phaser.Utils.Array.GetRandom(ITEM_TYPES);
+    item.spawn(type, x, -20);
   }
 
   update(time: number, delta: number): void {
@@ -203,11 +208,12 @@ export class GameScene extends Phaser.Scene {
     if (reason) this.end(reason);
   }
 
-  /** Złapanie otwartym workiem → punkty + efekty. */
+  /** Złapanie otwartym workiem → punkty z katalogu + ekwipunek + efekty. */
   private catchItem(item: FallingItem): void {
     this.sfx.enemyDeath();
-    this.score.addBonus(item.points);
-    this.hud.setScore(this.score.score);
+    this.score.addCatch(item.itemType);
+    this.inventory.add(item.itemType);
+    this.hud.setRaceProgress(this.score.score);
     this.burst.explode(12, item.x, item.y);
     item.disableBody(true, true);
   }
@@ -231,7 +237,7 @@ export class GameScene extends Phaser.Scene {
       this.player.respawn(SPAWN_X, SPAWN_Y, this.time.now);
       this.hud.setLives(this.run.lives);
       this.hud.setHp(this.player.hpRatio);
-      this.hud.setScore(this.score.score);
+      this.hud.setRaceProgress(this.score.score);
       this.cameras.main.flash(160, 255, 60, 60);
     } else {
       this.end("death");

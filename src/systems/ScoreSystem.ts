@@ -13,6 +13,7 @@ import {
   WAVE_BONUS,
   type EnemyType,
 } from "../config";
+import { ITEMS, type ItemType } from "../data/items";
 
 export class ScoreSystem {
   private _score = 0;
@@ -43,6 +44,16 @@ export class ScoreSystem {
     this.lastKillAt = now;
     const mult = Math.min(COMBO.maxMultiplier, this._combo);
     const points = ENEMY_POINTS[type] * mult;
+    this._score += points;
+    return points;
+  }
+
+  /**
+   * Łapanie przedmiotu (Cashify): nalicza płaskie punkty z katalogu items.ts
+   * (bez combo). Zwraca przyznane punkty.
+   */
+  addCatch(type: ItemType): number {
+    const points = ITEMS[type].points;
     this._score += points;
     return points;
   }

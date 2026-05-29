@@ -3,6 +3,7 @@ import {
   COLOR_HEX,
   COLORS,
   BOSS,
+  WIN_SCORE,
   WIN_SCORE_AFTER_MINI_BOSS,
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -141,6 +142,14 @@ export class HUD {
 
   setScore(score: number): void {
     this.label.setText(`WYNIK ${score}`);
+  }
+
+  /** Cashify: pasek + etykieta postępu do celu rundy (WIN_SCORE). */
+  setRaceProgress(score: number): void {
+    const ratio = Phaser.Math.Clamp(score / WIN_SCORE, 0, 1);
+    this.progressFill.width = this.progressWidth * ratio;
+    this.progressFill.fillColor = COLORS.yellow;
+    this.label.setText(`WYNIK ${score} / ${WIN_SCORE}`);
   }
 
   /**

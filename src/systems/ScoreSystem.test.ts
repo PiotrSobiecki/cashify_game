@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ScoreSystem } from "./ScoreSystem";
 import { ENEMY_POINTS, TARGET_SCORE } from "../config";
+import { ITEMS } from "../data/items";
 
 // Pomocnik: zabójstwo „świeże" (poza oknem combo), więc mnożnik = ×1.
 const FAR = 100_000;
@@ -90,5 +91,20 @@ describe("ScoreSystem — bonus fali i śmierć", () => {
     t.addKill("virus", 0); // 10
     t.onDeath(); // 10 - 15 → 0
     expect(t.score).toBe(0);
+  });
+});
+
+describe("ScoreSystem — łapanie (Cashify)", () => {
+  it("awards flat catalog points for a caught item", () => {
+    const s = new ScoreSystem();
+    expect(s.addCatch("btc")).toBe(ITEMS.btc.points);
+    expect(s.score).toBe(ITEMS.btc.points);
+  });
+
+  it("sums catalog points across different item types", () => {
+    const s = new ScoreSystem();
+    s.addCatch("btc");
+    s.addCatch("pln");
+    expect(s.score).toBe(ITEMS.btc.points + ITEMS.pln.points);
   });
 });

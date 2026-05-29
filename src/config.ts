@@ -18,6 +18,13 @@ export const WIN_SCORE_AFTER_MINI_BOSS = 100;
 /** Twardy limit sesji: 2 pętle utworu „Firewall" (3:15) = 6:30. */
 export const SESSION_MAX_MS = 6 * 60 * 1000 + 30 * 1000;
 
+/** Cashify: cel rundy = 3000 pkt. Wygrana po czasie do 3000 (Faza 4). */
+export const WIN_SCORE = 3000;
+
+/** Progi zdarzeń (Faza 3): bossy tuż przed milestone'ami, NPC na okrągłych. */
+export const BOSS_MILESTONES = [900, 1900, 2900] as const;
+export const NPC_MILESTONES = [1000, 2000, 3000] as const;
+
 /** Liczba żyć w rundzie (PRD #17). Każde życie = pełne HP. */
 export const LIVES = 3;
 
@@ -37,7 +44,6 @@ export const BAG = {
  */
 export const FALLING = {
   speed: 160,
-  testPoints: 20,
   spawnEveryMs: 750,
   bounceUpSpeed: 220, // odrzut w górę po odbiciu od zamkniętego worka
   bounceSideSpeed: 120,
