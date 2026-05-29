@@ -347,7 +347,7 @@ export class GameScene extends Phaser.Scene {
   private setupTouchControls(): void {
     this.input.addPointer(2);
 
-    const r = TOUCH.shieldBtnRadius;
+    const r = TOUCH.bagBtnRadius;
     const bx = GAME_WIDTH - r - 18;
     const by = GAME_HEIGHT - r - 22;
     this.bagBtn = this.add.circle(bx, by, r, COLORS.yellow, 0.12).setDepth(15);
@@ -425,7 +425,7 @@ export class GameScene extends Phaser.Scene {
   private overBagBtn(p: Phaser.Input.Pointer): boolean {
     if (!this.bagBtn) return false;
     const d = Phaser.Math.Distance.Between(p.x, p.y, this.bagBtn.x, this.bagBtn.y);
-    return d <= TOUCH.shieldBtnRadius + 8;
+    return d <= TOUCH.bagBtnRadius + 8;
   }
 
   private togglePause(): void {

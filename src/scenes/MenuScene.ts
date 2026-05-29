@@ -29,7 +29,7 @@ export class MenuScene extends Phaser.Scene {
     this.marquee = undefined;
 
     this.highText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.32 + 78, "TOP DEFENDER: —", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.32 + 78, "NAJSZYBSZY: —", {
         fontFamily: "monospace",
         fontSize: "14px",
         color: COLOR_HEX.green,
@@ -37,20 +37,25 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.32, "FIREWALL", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.32, "CASHIFY", {
         fontFamily: "monospace",
         fontSize: "56px",
-        color: COLOR_HEX.cyan,
+        color: COLOR_HEX.yellow,
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.32 + 50, "opanuj chaos w sieci", {
-        fontFamily: "monospace",
-        fontSize: "16px",
-        color: COLOR_HEX.magenta,
-      })
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT * 0.32 + 50,
+        "łap kasę i skeszuj się — jak najszybciej!",
+        {
+          fontFamily: "monospace",
+          fontSize: "13px",
+          color: COLOR_HEX.magenta,
+        },
+      )
       .setOrigin(0.5);
 
     const start = this.add
@@ -62,13 +67,19 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    this.tweens.add({ targets: start, alpha: 0.3, duration: 700, yoyo: true, repeat: -1 });
+    this.tweens.add({
+      targets: start,
+      alpha: 0.3,
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+    });
 
     this.add
       .text(
         GAME_WIDTH / 2,
         GAME_HEIGHT * 0.62 + 40,
-        "ENTER / klik — ruch: ← → ↑ ↓ / WASD · SPACJA = tarcza · M = muzyka",
+        "ENTER / klik — ruch: ← → ↑ ↓ / WASD · przytrzymaj SPACJA = WOREK · M = muzyka",
         { fontFamily: "monospace", fontSize: "11px", color: COLOR_HEX.yellow },
       )
       .setOrigin(0.5);
@@ -93,7 +104,7 @@ export class MenuScene extends Phaser.Scene {
     } catch {
       return; // brak sieci → HIGH SCORE zostaje „—", brak paska
     }
-    this.highText.setText(`TOP DEFENDER: ${topName(list) || "—"}`);
+    this.highText.setText(`NAJSZYBSZY: ${topName(list) || "—"}`);
 
     const top = topEntries(list);
     if (top.length === 0) return;

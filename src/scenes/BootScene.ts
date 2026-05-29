@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { registerGameTextures } from "../art/SpriteTextures";
 import { MUSIC_KEY, musicPath } from "../systems/MusicController";
 import { NPCS } from "../data/npc";
+import { ITEMS } from "../data/items";
 
 /**
  * Preload: ładuje utwór i generuje proceduralne tekstury, potem menu.
@@ -14,8 +15,13 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.audio(MUSIC_KEY, musicPath());
-    // Avatary pracowników kantoru (Faza 3) — popupy progowe.
+    // Avatary pracowników kantoru — popupy progowe.
     for (const npc of Object.values(NPCS)) this.load.image(npc.key, npc.asset);
+    // Ikonki przedmiotów (krypto/fiat/metale). Klucz = ścieżka assetu z katalogu;
+    // brakujące pliki tylko ostrzegą (loaderror), FallingItem użyje placeholdera.
+    for (const def of Object.values(ITEMS)) {
+      this.load.image(def.asset, `assets/${def.asset}.png`);
+    }
     // 404 (mp3 / brakujący avatar) nie może wywalić preloadu.
     this.load.on("loaderror", (file: Phaser.Loader.File) => {
       if (file.key === MUSIC_KEY) {

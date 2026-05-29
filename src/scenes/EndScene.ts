@@ -1,7 +1,18 @@
 import Phaser from "phaser";
-import { COLOR_HEX, GAME_WIDTH, GAME_HEIGHT, CASHIFY_URL, LEADERBOARD_SIZE } from "../config";
+import {
+  COLOR_HEX,
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  CASHIFY_URL,
+  LEADERBOARD_SIZE,
+} from "../config";
 import { RetroGridBackground } from "../ui/RetroGridBackground";
-import { findPlayerIndex, qualifies, topEntries, type RunResult } from "../systems/ranking";
+import {
+  findPlayerIndex,
+  qualifies,
+  topEntries,
+  type RunResult,
+} from "../systems/ranking";
 import { fetchTopScores, submitScore } from "../systems/scoreApi";
 import { MusicController } from "../systems/MusicController";
 import { ITEMS, type ItemType } from "../data/items";
@@ -21,7 +32,7 @@ export interface EndData {
 }
 
 const TITLES: Record<EndData["reason"], { text: string; color: string }> = {
-  win: { text: "MOŻESZ SIĘ SKESOWAĆ!", color: COLOR_HEX.yellow },
+  win: { text: "MOŻESZ SIĘ SKESZOWAĆ!", color: COLOR_HEX.yellow },
   death: { text: "KONIEC GRY", color: COLOR_HEX.magenta },
   timeout: { text: "CZAS MINĄŁ", color: COLOR_HEX.yellow },
 };
@@ -61,19 +72,32 @@ export class EndScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 104, `WYNIK ${data.score} · CZAS ${formatTime(data.timeMs)}`, {
-        fontFamily: "monospace",
-        fontSize: "16px",
-        color: COLOR_HEX.cyan,
-      })
+      .text(
+        GAME_WIDTH / 2,
+        104,
+        `WYNIK ${data.score} · CZAS ${formatTime(data.timeMs)}`,
+        {
+          fontFamily: "monospace",
+          fontSize: "16px",
+          color: COLOR_HEX.cyan,
+        },
+      )
       .setOrigin(0.5);
 
     this.renderLoot(data.loot);
 
     // przyciski (klik zawsze; Enter dopiero gdy nie ma już pola na imię)
-    const cta = this.makeButton(GAME_HEIGHT - 150, "→ IDŹ DO CASHIFY", COLOR_HEX.yellow);
+    const cta = this.makeButton(
+      GAME_HEIGHT - 150,
+      "→ IDŹ DO CASHIFY",
+      COLOR_HEX.yellow,
+    );
     cta.on("pointerdown", () => window.open(CASHIFY_URL, "_blank", "noopener"));
-    const retry = this.makeButton(GAME_HEIGHT - 94, "↻ ZAGRAJ JESZCZE RAZ", COLOR_HEX.green);
+    const retry = this.makeButton(
+      GAME_HEIGHT - 94,
+      "↻ ZAGRAJ JESZCZE RAZ",
+      COLOR_HEX.green,
+    );
     retry.on("pointerdown", () => this.scene.start("GameScene"));
 
     void this.loadRanking({
@@ -88,7 +112,9 @@ export class EndScene extends Phaser.Scene {
   private renderLoot(loot: LootEntry[]): void {
     const y0 = 415;
     if (loot.length === 0) return;
-    const sorted = [...loot].sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+    const sorted = [...loot].sort(
+      (a, b) => b.count - a.count || a.type.localeCompare(b.type),
+    );
 
     this.add
       .text(GAME_WIDTH / 2, y0, "— TWOJE ZDOBYCZE —", {
@@ -104,11 +130,16 @@ export class EndScene extends Phaser.Scene {
       const col = Math.floor(i / perCol);
       const row = i % perCol;
       this.add
-        .text(colX[col], y0 + 22 + row * 16, `${ITEMS[e.type].label} ×${e.count}`, {
-          fontFamily: "monospace",
-          fontSize: "11px",
-          color: COLOR_HEX.cyan,
-        })
+        .text(
+          colX[col],
+          y0 + 22 + row * 16,
+          `${ITEMS[e.type].label} ×${e.count}`,
+          {
+            fontFamily: "monospace",
+            fontSize: "11px",
+            color: COLOR_HEX.cyan,
+          },
+        )
         .setOrigin(0.5, 0);
     });
   }
@@ -149,12 +180,17 @@ export class EndScene extends Phaser.Scene {
 
   private renderUnavailable(): void {
     this.add
-      .text(GAME_WIDTH / 2, RANKING_TOP_Y + 20, "RANKING NIEDOSTĘPNY\n(brak połączenia)", {
-        fontFamily: "monospace",
-        fontSize: "14px",
-        color: COLOR_HEX.magenta,
-        align: "center",
-      })
+      .text(
+        GAME_WIDTH / 2,
+        RANKING_TOP_Y + 20,
+        "RANKING NIEDOSTĘPNY\n(brak połączenia)",
+        {
+          fontFamily: "monospace",
+          fontSize: "14px",
+          color: COLOR_HEX.magenta,
+          align: "center",
+        },
+      )
       .setOrigin(0.5);
   }
 
@@ -162,11 +198,16 @@ export class EndScene extends Phaser.Scene {
   private renderRanking(list: RunResult[], mine: RunResult | null): void {
     const top = topEntries(list, LEADERBOARD_SIZE);
     this.add
-      .text(GAME_WIDTH / 2, RANKING_TOP_Y, `— RANKING TOP ${LEADERBOARD_SIZE} —`, {
-        fontFamily: "monospace",
-        fontSize: "13px",
-        color: COLOR_HEX.magenta,
-      })
+      .text(
+        GAME_WIDTH / 2,
+        RANKING_TOP_Y,
+        `— RANKING TOP ${LEADERBOARD_SIZE} —`,
+        {
+          fontFamily: "monospace",
+          fontSize: "13px",
+          color: COLOR_HEX.magenta,
+        },
+      )
       .setOrigin(0.5);
 
     if (top.length === 0) {
@@ -186,16 +227,27 @@ export class EndScene extends Phaser.Scene {
       const isMine = i === mineIndex;
       const rank = (i + 1).toString().padStart(2, " ");
       const name = e.name.slice(0, 11).padEnd(11, " ");
-      const timeCol = (e.reason === "win" ? formatTime(e.timeMs) : "—").padStart(8, " ");
+      const timeCol = (
+        e.reason === "win" ? formatTime(e.timeMs) : "—"
+      ).padStart(8, " ");
       const score = e.score.toString().padStart(4, " ");
-      const color = isMine ? COLOR_HEX.yellow : e.reason === "win" ? COLOR_HEX.green : COLOR_HEX.cyan;
+      const color = isMine
+        ? COLOR_HEX.yellow
+        : e.reason === "win"
+          ? COLOR_HEX.green
+          : COLOR_HEX.cyan;
       this.add
-        .text(GAME_WIDTH / 2, y, `${isMine ? "►" : " "}${rank} ${name}${timeCol}  ${score}`, {
-          fontFamily: "monospace",
-          fontSize: "14px",
-          color,
-          fontStyle: isMine ? "bold" : "normal",
-        })
+        .text(
+          GAME_WIDTH / 2,
+          y,
+          `${isMine ? "►" : " "}${rank} ${name}${timeCol}  ${score}`,
+          {
+            fontFamily: "monospace",
+            fontSize: "14px",
+            color,
+            fontStyle: isMine ? "bold" : "normal",
+          },
+        )
         .setOrigin(0.5);
     });
   }
@@ -216,7 +268,8 @@ export class EndScene extends Phaser.Scene {
       "text-align:center;box-shadow:0 0 26px rgba(0,240,255,0.45);";
     const label = document.createElement("div");
     label.textContent = `TOP ${LEADERBOARD_SIZE}! WPISZ IMIĘ:`;
-    label.style.cssText = "color:#00f0ff;font-size:15px;margin-bottom:12px;letter-spacing:1px;";
+    label.style.cssText =
+      "color:#00f0ff;font-size:15px;margin-bottom:12px;letter-spacing:1px;";
     const input = document.createElement("input");
     input.maxLength = 12;
     input.placeholder = "GRACZ";
@@ -252,10 +305,16 @@ export class EndScene extends Phaser.Scene {
   }
 
   private bindRetryEnter(): void {
-    this.input.keyboard?.once("keydown-ENTER", () => this.scene.start("GameScene"));
+    this.input.keyboard?.once("keydown-ENTER", () =>
+      this.scene.start("GameScene"),
+    );
   }
 
-  private makeButton(y: number, label: string, color: string): Phaser.GameObjects.Text {
+  private makeButton(
+    y: number,
+    label: string,
+    color: string,
+  ): Phaser.GameObjects.Text {
     return this.add
       .text(GAME_WIDTH / 2, y, label, {
         fontFamily: "monospace",
