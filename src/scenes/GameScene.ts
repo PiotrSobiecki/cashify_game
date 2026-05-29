@@ -13,6 +13,8 @@ import {
   NPC_MILESTONES,
   BOSS_PHASE,
   NPC_POPUP_MS,
+  WIN_SCORE,
+  GRACE_MS,
 } from "../config";
 import { Player } from "../entities/Player";
 import { FallingItem } from "../entities/FallingItem";
@@ -68,6 +70,7 @@ export class GameScene extends Phaser.Scene {
   private bossActive = false;
   private bossEndsAt = 0;
   private bossSprite?: Phaser.GameObjects.Image;
+  private winStarted = false; // sekwencja wygranej po 3000 (rundka honorowa)
 
   private music!: MusicController;
   private sfx!: Sfx;
@@ -97,6 +100,7 @@ export class GameScene extends Phaser.Scene {
     this.paused = false;
     this.nextSpawnAt = 0;
     this.bossActive = false;
+    this.winStarted = false;
 
     this.bg = new RetroGridBackground(this);
     this.score = new ScoreSystem();
@@ -104,7 +108,8 @@ export class GameScene extends Phaser.Scene {
     this.run = new RunController();
     this.clock = new RaceClock();
     this.bossTracker = new MilestoneTracker([...BOSS_MILESTONES]);
-    this.npcTracker = new MilestoneTracker([...NPC_MILESTONES]);
+    // 3000 (Jakub) prowadzi sekwencja wygranej; tracker NPC tylko 1000/2000.
+    this.npcTracker = new MilestoneTracker(NPC_MILESTONES.filter((m) => m < WIN_SCORE));
     this.popup = new EmployeePopup(this);
 
     this.player = new Player(this, SPAWN_X, SPAWN_Y);
@@ -227,11 +232,14 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // --- czas + koniec rundy (timeout; wygrana 3000 dopiero w Fazie 4) ---
+    // --- czas + koniec rundy ---
+    // Wygraną (3000) prowadzi sekwencja z rundką honorową (startWinSequence),
+    // więc tu kończymy tylko na twardym timeoucie.
     const elapsed = this.clock.elapsed(this.time.now);
     this.hud.setTime(elapsed, SESSION_MAX_MS);
     const reason = this.run.update(this.score.score, elapsed);
-    if (reason) this.end(reason);
+    if (reason === "win" && !this.winStarted) this.startWinSequence();
+    else if (reason === "timeout") this.end("timeout");
   }
 
   /** Złapanie otwartym workiem → punkty z katalogu + ekwipunek + progi + efekty. */
@@ -284,6 +292,20 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Wygrana (3000): zamraża czas (= wynik speedrun), popup Jakuba, rundka
+   * honorowa ~10 s (gra leci, zegar stoi), potem ekran końcowy.
+   */
+  private startWinSequence(): void {
+    if (this.winStarted) return;
+    this.winStarted = true;
+    this.clock.pause(this.time.now);
+    const jakub = NPCS[WIN_SCORE];
+    if (jakub) this.popup.show(jakub.key, jakub.name, jakub.line, NPC_POPUP_MS, () => {});
+    this.cameras.main.flash(220, 255, 215, 0);
+    this.time.delayedCall(GRACE_MS, () => this.end("win"));
+  }
+
   /** Popup pracownika kantoru: zatrzymuje zegar wyścigu na czas wyświetlenia. */
   private showNpc(milestone: number): void {
     const npc = NPCS[milestone];
@@ -297,6 +319,7 @@ export class GameScene extends Phaser.Scene {
   /** Kontakt z zamkniętym workiem → przedmiot odbija się, gracz traci HP. */
   private bounceItem(item: FallingItem): void {
     item.bounceOff(this.player.x);
+    if (this.winStarted) return; // rundka honorowa: bez obrażeń
     if (!this.player.takeDamage(BAG.contactDamage, this.time.now)) return;
     this.afterPlayerHit(this.player.x, this.player.y);
   }
@@ -440,6 +463,7 @@ export class GameScene extends Phaser.Scene {
       reason,
       score: this.score.score,
       timeMs: Math.max(0, this.clock.elapsed(this.time.now)),
+      loot: this.inventory.entries(),
     };
     if (reason === "win") {
       this.scene.start("EndScene", data);

@@ -1,20 +1,28 @@
 import Phaser from "phaser";
-import { COLOR_HEX, GAME_WIDTH, GAME_HEIGHT, YOUTUBE_URL, LEADERBOARD_SIZE } from "../config";
+import { COLOR_HEX, GAME_WIDTH, GAME_HEIGHT, CASHIFY_URL, LEADERBOARD_SIZE } from "../config";
 import { RetroGridBackground } from "../ui/RetroGridBackground";
 import { findPlayerIndex, qualifies, topEntries, type RunResult } from "../systems/ranking";
 import { fetchTopScores, submitScore } from "../systems/scoreApi";
 import { MusicController } from "../systems/MusicController";
+import { ITEMS, type ItemType } from "../data/items";
 
-/** Powód zakończenia rundy + wynik i czas (z GameScene). */
+/** Wpis listy zdobyczy (typ × ilość). */
+export interface LootEntry {
+  type: ItemType;
+  count: number;
+}
+
+/** Powód zakończenia rundy + wynik, czas i zdobycze (z GameScene). */
 export interface EndData {
   reason: "win" | "death" | "timeout";
   score: number;
   timeMs: number;
+  loot: LootEntry[];
 }
 
 const TITLES: Record<EndData["reason"], { text: string; color: string }> = {
-  win: { text: "FIREWALL AKTYWNY!", color: COLOR_HEX.green },
-  death: { text: "BAZA ZHAKOWANA", color: COLOR_HEX.magenta },
+  win: { text: "MOŻESZ SIĘ SKESOWAĆ!", color: COLOR_HEX.yellow },
+  death: { text: "KONIEC GRY", color: COLOR_HEX.magenta },
   timeout: { text: "CZAS MINĄŁ", color: COLOR_HEX.yellow },
 };
 
@@ -60,13 +68,49 @@ export class EndScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    this.renderLoot(data.loot);
+
     // przyciski (klik zawsze; Enter dopiero gdy nie ma już pola na imię)
-    const yt = this.makeButton(GAME_HEIGHT - 150, "▶ OBEJRZYJ NA YOUTUBE", COLOR_HEX.yellow);
-    yt.on("pointerdown", () => window.open(YOUTUBE_URL, "_blank", "noopener"));
+    const cta = this.makeButton(GAME_HEIGHT - 150, "→ IDŹ DO CASHIFY", COLOR_HEX.yellow);
+    cta.on("pointerdown", () => window.open(CASHIFY_URL, "_blank", "noopener"));
     const retry = this.makeButton(GAME_HEIGHT - 94, "↻ ZAGRAJ JESZCZE RAZ", COLOR_HEX.green);
     retry.on("pointerdown", () => this.scene.start("GameScene"));
 
-    void this.loadRanking({ name: "", ...data });
+    void this.loadRanking({
+      name: "",
+      reason: data.reason,
+      score: data.score,
+      timeMs: data.timeMs,
+    });
+  }
+
+  /** Lista zdobyczy (typ × ilość), 2 kolumny, sortowana malejąco po liczbie. */
+  private renderLoot(loot: LootEntry[]): void {
+    const y0 = 415;
+    if (loot.length === 0) return;
+    const sorted = [...loot].sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+
+    this.add
+      .text(GAME_WIDTH / 2, y0, "— TWOJE ZDOBYCZE —", {
+        fontFamily: "monospace",
+        fontSize: "13px",
+        color: COLOR_HEX.yellow,
+      })
+      .setOrigin(0.5);
+
+    const colX = [GAME_WIDTH * 0.27, GAME_WIDTH * 0.73];
+    const perCol = Math.ceil(sorted.length / 2);
+    sorted.forEach((e, i) => {
+      const col = Math.floor(i / perCol);
+      const row = i % perCol;
+      this.add
+        .text(colX[col], y0 + 22 + row * 16, `${ITEMS[e.type].label} ×${e.count}`, {
+          fontFamily: "monospace",
+          fontSize: "11px",
+          color: COLOR_HEX.cyan,
+        })
+        .setOrigin(0.5, 0);
+    });
   }
 
   /** Pobiera ranking, ew. pyta o imię i zapisuje wynik. Offline → komunikat. */

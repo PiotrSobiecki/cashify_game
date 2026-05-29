@@ -34,6 +34,12 @@ export const BOSS_PHASE = {
 /** Popup pracownika kantoru — ile trzyma się na ekranie (zegar wyścigu stoi). */
 export const NPC_POPUP_MS = 4000;
 
+/** Rundka honorowa po osiągnięciu 3000: ile gra trwa jeszcze (czas zamrożony). */
+export const GRACE_MS = 10000;
+
+/** CTA na ekranie końcowym — kantor Cashify. */
+export const CASHIFY_URL = "https://cashify.eu";
+
 /** Liczba żyć w rundzie (PRD #17). Każde życie = pełne HP. */
 export const LIVES = 3;
 
