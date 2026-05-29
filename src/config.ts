@@ -108,11 +108,20 @@ export const LEADERBOARD_SIZE = 10;
  * Build prod celuje w workera; `vite dev` w localhost (`wrangler dev` :8787).
  * `VITE_API_BASE` nadpisuje oba. Bez sieci ranking jest niedostępny.
  */
-export const API_BASE =
+const RAW_API_BASE =
   import.meta.env.VITE_API_BASE ??
   (import.meta.env.DEV
     ? "http://localhost:8787"
     : "https://cashify-scores.piotr-sobiecki.workers.dev");
+
+/**
+ * Normalizacja: gdy `VITE_API_BASE` poda host bez schematu (np.
+ * "cashify-scores...workers.dev"), `fetch` potraktowałby go jako ścieżkę
+ * względną i uderzył w pages.dev zamiast w workera. Dokładamy https://.
+ */
+export const API_BASE = /^https?:\/\//.test(RAW_API_BASE)
+  ? RAW_API_BASE
+  : `https://${RAW_API_BASE}`;
 
 /**
  * Audio: utwór leci w pętli przez całą rozgrywkę. Plik w `public/`
