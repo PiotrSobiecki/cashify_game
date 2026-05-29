@@ -11,6 +11,7 @@ export class HUD {
   private label: Phaser.GameObjects.Text;
   private progressFill: Phaser.GameObjects.Rectangle;
   private hpFill: Phaser.GameObjects.Rectangle;
+  private energyFill: Phaser.GameObjects.Rectangle;
   private timeText: Phaser.GameObjects.Text;
   private livesText: Phaser.GameObjects.Text;
 
@@ -20,15 +21,15 @@ export class HUD {
 
   constructor(scene: Phaser.Scene) {
     // panel tła HUD
-    scene.add.rectangle(0, 0, GAME_WIDTH, 86, COLORS.bg, 0.82).setOrigin(0, 0).setDepth(14);
-    scene.add.rectangle(0, 86, GAME_WIDTH, 2, COLORS.yellow, 0.3).setOrigin(0, 0).setDepth(14);
+    scene.add.rectangle(0, 0, GAME_WIDTH, 100, COLORS.panel, 0.88).setOrigin(0, 0).setDepth(14);
+    scene.add.rectangle(0, 100, GAME_WIDTH, 2, COLORS.gold, 0.35).setOrigin(0, 0).setDepth(14);
 
     // czas + życia (prawy górny róg)
     this.timeText = scene.add
       .text(GAME_WIDTH - 16, 12, "0:00", {
         fontFamily: "monospace",
         fontSize: "18px",
-        color: COLOR_HEX.yellow,
+        color: COLOR_HEX.gold,
       })
       .setOrigin(1, 0)
       .setDepth(15);
@@ -36,7 +37,7 @@ export class HUD {
       .text(GAME_WIDTH - 16, 60, "", {
         fontFamily: "monospace",
         fontSize: "16px",
-        color: COLOR_HEX.green,
+        color: COLOR_HEX.cash,
       })
       .setOrigin(1, 0)
       .setDepth(15);
@@ -46,24 +47,41 @@ export class HUD {
       .text(16, 12, `WYNIK 0 / ${WIN_SCORE}`, {
         fontFamily: "monospace",
         fontSize: "18px",
-        color: COLOR_HEX.yellow,
+        color: COLOR_HEX.gold,
       })
       .setDepth(15);
-    scene.add.rectangle(16, 38, this.progressWidth, 5, 0x2a2410).setOrigin(0, 0).setDepth(15);
+    scene.add.rectangle(16, 38, this.progressWidth, 5, COLORS.panel).setOrigin(0, 0).setDepth(15);
     this.progressFill = scene.add
-      .rectangle(16, 38, 0, 5, COLORS.yellow)
+      .rectangle(16, 38, 0, 5, COLORS.gold)
       .setOrigin(0, 0)
       .setDepth(16);
 
     // HP
     scene.add
-      .text(16, 53, "HP", { fontFamily: "monospace", fontSize: "11px", color: COLOR_HEX.cyan })
+      .text(16, 53, "HP", { fontFamily: "monospace", fontSize: "11px", color: COLOR_HEX.fiat })
       .setDepth(15);
-    scene.add.rectangle(this.barX, 54, this.barWidth, 11, 0x10202c).setOrigin(0, 0).setDepth(15);
+    scene.add.rectangle(this.barX, 54, this.barWidth, 11, COLORS.panel).setOrigin(0, 0).setDepth(15);
     this.hpFill = scene.add
-      .rectangle(this.barX, 54, this.barWidth, 11, COLORS.green)
+      .rectangle(this.barX, 54, this.barWidth, 11, COLORS.cash)
       .setOrigin(0, 0)
       .setDepth(16);
+
+    // WOREK (energia otwarcia)
+    scene.add
+      .text(16, 71, "WÓR", { fontFamily: "monospace", fontSize: "11px", color: COLOR_HEX.gold })
+      .setDepth(15);
+    scene.add.rectangle(this.barX, 72, this.barWidth, 9, COLORS.panel).setOrigin(0, 0).setDepth(15);
+    this.energyFill = scene.add
+      .rectangle(this.barX, 72, this.barWidth, 9, COLORS.goldLight)
+      .setOrigin(0, 0)
+      .setDepth(16);
+  }
+
+  /** Pasek energii worka; gdy wyczerpany — sygnał magenta. */
+  setEnergy(ratio: number, exhausted: boolean): void {
+    const r = Phaser.Math.Clamp(ratio, 0, 1);
+    this.energyFill.width = this.barWidth * r;
+    this.energyFill.fillColor = exhausted ? COLORS.warn : COLORS.goldLight;
   }
 
   /** WYNIK + złoty pasek postępu do celu (WIN_SCORE). */
@@ -76,7 +94,7 @@ export class HUD {
   setHp(ratio: number): void {
     const r = Phaser.Math.Clamp(ratio, 0, 1);
     this.hpFill.width = this.barWidth * r;
-    this.hpFill.fillColor = r > 0.4 ? COLORS.green : r > 0.2 ? COLORS.yellow : COLORS.magenta;
+    this.hpFill.fillColor = r > 0.4 ? COLORS.cash : r > 0.2 ? COLORS.gold : COLORS.warn;
   }
 
   setLives(lives: number): void {
@@ -90,7 +108,7 @@ export class HUD {
     this.timeText.setText(`${mm}:${ss}`);
     const ratio = maxMs > 0 ? elapsedMs / maxMs : 0;
     this.timeText.setColor(
-      ratio > 0.85 ? COLOR_HEX.magenta : ratio > 0.6 ? COLOR_HEX.yellow : COLOR_HEX.cyan,
+      ratio > 0.85 ? COLOR_HEX.warn : ratio > 0.6 ? COLOR_HEX.gold : COLOR_HEX.text,
     );
   }
 }

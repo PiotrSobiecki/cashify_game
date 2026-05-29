@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { registerNpcPopupFrames } from "../assets/npcFrames";
 import { registerGameTextures } from "../art/SpriteTextures";
 import { MUSIC_KEY, musicPath } from "../systems/MusicController";
 import { NPCS } from "../data/npc";
@@ -17,6 +18,12 @@ export class BootScene extends Phaser.Scene {
     this.load.audio(MUSIC_KEY, musicPath());
     // Avatary pracowników kantoru — popupy progowe.
     for (const npc of Object.values(NPCS)) this.load.image(npc.key, npc.asset);
+    // Sprite'y worka (open/middle/closed) — wygląd gracza. Brak → fallback łuk.
+    this.load.image("bag_closed", "assets/bags/bag_closed.png");
+    this.load.image("bag_middle", "assets/bags/bag_middle.png");
+    this.load.image("bag_open", "assets/bags/bag_open.png");
+    // Logo Cashify (SVG) nakładane na worek. Brak → worek bez logo.
+    this.load.svg("cashify_logo", "assets/cashify-logo.svg", { width: 128, height: 32 });
     // Ikonki przedmiotów (krypto/fiat/metale). Klucz = ścieżka assetu z katalogu;
     // brakujące pliki tylko ostrzegą (loaderror), FallingItem użyje placeholdera.
     for (const def of Object.values(ITEMS)) {
@@ -34,6 +41,7 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     registerGameTextures(this);
+    registerNpcPopupFrames(this);
     this.scene.start("MenuScene");
   }
 }

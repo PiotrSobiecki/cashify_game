@@ -17,7 +17,7 @@ export const NPCS: Record<number, NpcDef> = {
     key: "npc_jacek",
     asset: "assets/npc/jacek.png",
     name: "Jacek",
-    line: "Dawaj, wstawaj, nie poddawaj się! Ja w twoim wieku lepiej grałem.",
+    line: "Dawaj, dawaj, nie poddawaj się! Ja w twoim wieku lepiej grałem.",
   },
   2000: {
     key: "npc_weronika",
@@ -29,6 +29,6 @@ export const NPCS: Record<number, NpcDef> = {
     key: "npc_jakub",
     asset: "assets/npc/jakub.png",
     name: "Jakub",
-    line: "Udało ci się osiągnąć cel! Teraz możesz się skesować w Cashify.",
+    line: "Udało ci się osiągnąć cel! Teraz możesz się skeszować w Cashify.",
   },
 };

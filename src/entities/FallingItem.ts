@@ -1,14 +1,14 @@
 import Phaser from "phaser";
-import { FALLING, COLORS } from "../config";
+import { BAG, FALLING, COLORS } from "../config";
 import { TEXTURE, SPRITE } from "../art/SpriteTextures";
 import { ITEMS, type ItemType, type ItemCategory } from "../data/items";
 
 /** Barwy placeholdera wg kategorii (gdy brak PNG z katalogu). */
 const CATEGORY_TINT: Record<ItemCategory, number> = {
-  crypto: COLORS.yellow,
-  fiat: COLORS.green,
-  metal: COLORS.cyan,
-  boss: COLORS.magenta,
+  crypto: COLORS.crypto,
+  fiat: COLORS.fiat,
+  metal: COLORS.gold,
+  boss: COLORS.goldLight,
 };
 
 /**
@@ -34,7 +34,9 @@ export class FallingItem extends Phaser.Physics.Arcade.Image {
     const def = ITEMS[type];
     const hasPng = this.scene.textures.exists(def.asset);
     this.enableBody(true, x, y, true, true);
-    this.setDepth(4);
+    this.setDepth(BAG.depth.itemFront);
+    this.setAlpha(1);
+    this.setData("swallowing", false);
     this.setTexture(hasPng ? def.asset : TEXTURE.itemFallback);
     if (hasPng) this.clearTint();
     else this.setTint(CATEGORY_TINT[def.category]);

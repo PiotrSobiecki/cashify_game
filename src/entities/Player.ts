@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { COLORS, PLAYER, GAME_HEIGHT } from "../config";
+import { COLORS, PLAYER, GAME_WIDTH, GAME_HEIGHT } from "../config";
 import { TEXTURE } from "../art/SpriteTextures";
 
 /**
@@ -17,21 +17,24 @@ export class Player extends Phaser.Physics.Arcade.Image {
     super(scene, x, y, TEXTURE.player);
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setCollideWorldBounds(true);
+    this.setCollideWorldBounds(false);
     this.setDepth(6);
 
     this.glow = scene.add.graphics();
     this.glow.setDepth(5);
 
+    this.refreshHitbox();
+  }
+
+  /** Dopasowuje hitbox do aktualnego displaySize (worek PNG zmienia skalę w BagSystem). */
+  refreshHitbox(): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(
-      PLAYER.bodyRadius,
-      this.width / 2 - PLAYER.bodyRadius,
-      this.height / 2 - PLAYER.bodyRadius + 2,
-    );
+    const r = Math.max(PLAYER.bodyRadius, Math.min(this.displayWidth, this.displayHeight) * 0.2);
+    body.setCircle(r, this.displayWidth / 2 - r, this.displayHeight / 2 - r + 2);
   }
 
   preUpdate(): void {
+    this.clampPosition();
     const now = this.scene.time.now;
     this.glow.clear();
     if (now < this.immuneUntil) {
@@ -62,7 +65,7 @@ export class Player extends Phaser.Physics.Arcade.Image {
   drive(dx: number, dy: number): void {
     const len = Math.hypot(dx, dy) || 1;
     this.setVelocity((dx / len) * PLAYER.speed, (dy / len) * PLAYER.speed);
-    this.y = Phaser.Math.Clamp(this.y, PLAYER.zoneTop, GAME_HEIGHT - 24);
+    this.clampPosition();
   }
 
   /**
@@ -71,7 +74,18 @@ export class Player extends Phaser.Physics.Arcade.Image {
    */
   driveProportional(sx: number, sy: number): void {
     this.setVelocity(sx * PLAYER.speed, sy * PLAYER.speed);
-    this.y = Phaser.Math.Clamp(this.y, PLAYER.zoneTop, GAME_HEIGHT - 24);
+    this.clampPosition();
+  }
+
+  /** Krawędzie od połowy szerokości worka (nie od małego hitboxa fizyki). */
+  private clampPosition(): void {
+    const halfW = this.displayWidth * 0.5;
+    const minX = halfW + PLAYER.edgePadX;
+    const maxX = GAME_WIDTH - halfW - PLAYER.edgePadX;
+    this.x = Phaser.Math.Clamp(this.x, minX, maxX);
+    const halfH = this.displayHeight * 0.5;
+    const maxY = GAME_HEIGHT - halfH - PLAYER.edgePadY;
+    this.y = Phaser.Math.Clamp(this.y, PLAYER.zoneTop, maxY);
   }
 
   /** Respawn po stracie życia: pełne HP, dłuższa nietykalność, reset pozycji/prędkości. */

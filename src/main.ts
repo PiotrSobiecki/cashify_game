@@ -11,6 +11,8 @@ const config: Phaser.Types.Core.GameConfig = {
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   backgroundColor: COLOR_HEX.bg,
+  pixelArt: true, // ostre, „pikselowe" skalowanie (retro look)
+  roundPixels: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: "arcade", arcade: { gravity: { x: 0, y: 0 } } },
   scene: [BootScene, MenuScene, GameScene, EndScene],

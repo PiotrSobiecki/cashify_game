@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { COLOR_HEX, GAME_WIDTH, GAME_HEIGHT } from "../config";
-import { RetroGridBackground } from "../ui/RetroGridBackground";
+import { CurrencyBackdrop } from "../ui/CurrencyBackdrop";
 import { topName, topEntries, type RunResult } from "../systems/ranking";
 import { fetchTopScores } from "../systems/scoreApi";
 import { MusicController } from "../systems/MusicController";
@@ -14,7 +14,7 @@ const MARQUEE_SPEED = 70; // px/s
 
 /** Ekran startowy: tytuł + HIGH SCORE + START + przewijany TOP 10 na dole. */
 export class MenuScene extends Phaser.Scene {
-  private bg!: RetroGridBackground;
+  private bg!: CurrencyBackdrop;
   private music!: MusicController;
   private highText!: Phaser.GameObjects.Text;
   private marquee?: Phaser.GameObjects.Text;
@@ -24,7 +24,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.bg = new RetroGridBackground(this);
+    this.bg = new CurrencyBackdrop(this);
     this.music = new MusicController(this);
     this.marquee = undefined;
 
@@ -32,7 +32,7 @@ export class MenuScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.32 + 78, "NAJSZYBSZY: —", {
         fontFamily: "monospace",
         fontSize: "14px",
-        color: COLOR_HEX.green,
+        color: COLOR_HEX.cash,
       })
       .setOrigin(0.5);
 
@@ -40,7 +40,7 @@ export class MenuScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.32, "CASHIFY", {
         fontFamily: "monospace",
         fontSize: "56px",
-        color: COLOR_HEX.yellow,
+        color: COLOR_HEX.gold,
         fontStyle: "bold",
       })
       .setOrigin(0.5);
@@ -49,11 +49,11 @@ export class MenuScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         GAME_HEIGHT * 0.32 + 50,
-        "łap kasę i skeszuj się — jak najszybciej!",
+        "Jakieś krypto? Gotóweczka? Łap i skeszuj się!",
         {
           fontFamily: "monospace",
           fontSize: "13px",
-          color: COLOR_HEX.magenta,
+          color: COLOR_HEX.text,
         },
       )
       .setOrigin(0.5);
@@ -62,7 +62,7 @@ export class MenuScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.62, "▶ START", {
         fontFamily: "monospace",
         fontSize: "28px",
-        color: COLOR_HEX.green,
+        color: COLOR_HEX.cash,
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -80,7 +80,7 @@ export class MenuScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         GAME_HEIGHT * 0.62 + 40,
         "ENTER / klik — ruch: ← → ↑ ↓ / WASD · przytrzymaj SPACJA = WOREK · M = muzyka",
-        { fontFamily: "monospace", fontSize: "11px", color: COLOR_HEX.yellow },
+        { fontFamily: "monospace", fontSize: "11px", color: COLOR_HEX.fiat },
       )
       .setOrigin(0.5);
 
@@ -117,7 +117,7 @@ export class MenuScene extends Phaser.Scene {
       .text(GAME_WIDTH, GAME_HEIGHT - 14, text, {
         fontFamily: "monospace",
         fontSize: "13px",
-        color: COLOR_HEX.cyan,
+        color: COLOR_HEX.fiat,
       })
       .setOrigin(0, 0.5)
       .setDepth(20);

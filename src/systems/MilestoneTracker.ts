@@ -1,5 +1,5 @@
 /**
- * Śledzi progi punktowe (np. bossy 900/1900/2900, NPC 1000/2000/3000).
+ * Śledzi progi punktowe (bossy / NPC z config).
  * Każdy próg odpala się DOKŁADNIE RAZ na rundę: po przekroczeniu zostaje
  * trwale oznaczony, więc spadek wyniku (kara −15 po śmierci) i ponowne
  * dojście do progu już go nie wyzwala. Czysta logika — bez Phasera.

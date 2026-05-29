@@ -25,18 +25,19 @@ import { RunController } from "../systems/RunController";
 import { RaceClock } from "../systems/RaceClock";
 import { MilestoneTracker } from "../systems/MilestoneTracker";
 import { resolveCatch } from "../systems/bagCatch";
-import { ITEM_TYPES, BOSS_DROP, type ItemType } from "../data/items";
+import { BOSS_DROP, isCollectibleItemType, randomWeightedItemType, type ItemType } from "../data/items";
 import { NPCS } from "../data/npc";
-import { RetroGridBackground } from "../ui/RetroGridBackground";
+import { CurrencyBackdrop } from "../ui/CurrencyBackdrop";
 import { HUD } from "../ui/HUD";
 import { EmployeePopup } from "../ui/EmployeePopup";
+import { BossEncounterDisplay } from "../ui/BossEncounterDisplay";
 import { MusicController } from "../systems/MusicController";
 import { Sfx } from "../systems/Sfx";
 import { followDrive } from "../systems/TouchMove";
 import type { EndData } from "./EndScene";
 
 const SPAWN_X = GAME_WIDTH / 2;
-const SPAWN_Y = GAME_HEIGHT - 90;
+const SPAWN_Y = GAME_HEIGHT - BAG.displayHeight / 2 - BAG.bottomEdgePad;
 
 /**
  * Rdzeń rozgrywki Cashify (Faza 1): gracz porusza workiem, przytrzymaniem
@@ -44,7 +45,7 @@ const SPAWN_Y = GAME_HEIGHT - 90;
  * worek — przedmiot odbija się i zabiera HP. 3 życia; śmierć = respawn −15 pkt.
  */
 export class GameScene extends Phaser.Scene {
-  private bg!: RetroGridBackground;
+  private bg!: CurrencyBackdrop;
   private player!: Player;
   private bag!: BagSystem;
   private score!: ScoreSystem;
@@ -69,7 +70,8 @@ export class GameScene extends Phaser.Scene {
   // faza bossa: wstrzymuje normalny spawn, zrzuca boss_bary przez ~10 s
   private bossActive = false;
   private bossEndsAt = 0;
-  private bossSprite?: Phaser.GameObjects.Image;
+  private bossDisplay?: BossEncounterDisplay;
+  private bossCount = 0; // który to boss (0→Jacek, 1→Weronika, 2→Jakub)
   private winStarted = false; // sekwencja wygranej po 3000 (rundka honorowa)
 
   private music!: MusicController;
@@ -100,9 +102,10 @@ export class GameScene extends Phaser.Scene {
     this.paused = false;
     this.nextSpawnAt = 0;
     this.bossActive = false;
+    this.bossCount = 0;
     this.winStarted = false;
 
-    this.bg = new RetroGridBackground(this);
+    this.bg = new CurrencyBackdrop(this);
     this.score = new ScoreSystem();
     this.inventory = new InventorySystem();
     this.run = new RunController();
@@ -112,6 +115,7 @@ export class GameScene extends Phaser.Scene {
     this.npcTracker = new MilestoneTracker(NPC_MILESTONES.filter((m) => m < WIN_SCORE));
     this.popup = new EmployeePopup(this);
 
+    this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
     this.player = new Player(this, SPAWN_X, SPAWN_Y);
     this.bag = new BagSystem(this, this.player);
 
@@ -127,7 +131,7 @@ export class GameScene extends Phaser.Scene {
       scale: { start: 1.2, end: 0 },
       angle: { min: 0, max: 360 },
       rotate: { min: 0, max: 360 },
-      tint: [COLORS.yellow, COLORS.cyan, COLORS.green],
+      tint: [COLORS.gold, COLORS.crypto, COLORS.cash],
       emitting: false,
     });
     this.burst.setDepth(8);
@@ -163,11 +167,21 @@ export class GameScene extends Phaser.Scene {
     if (this.sys.game.device.input.touch) this.setupTouchControls();
   }
 
-  private spawnItem(x: number, type: ItemType): void {
+  private spawnItem(x: number, type: ItemType, y = -20): void {
     if (this.ended) return;
-    const item = this.items.get(x, -20) as FallingItem | null;
+    const item = this.items.get(x, y) as FallingItem | null;
     if (!item) return;
-    item.spawn(type, x, -20);
+    item.spawn(type, x, y);
+  }
+
+  /** Sztabka z okienka bossa — pozycja i animacja rzutu z lady. */
+  private spawnBossDrop(): void {
+    const drop = this.bossDisplay?.getDropPoint() ?? {
+      x: Phaser.Math.Between(28, GAME_WIDTH - 28),
+      y: -20,
+    };
+    this.spawnItem(drop.x, BOSS_DROP, drop.y);
+    this.bossDisplay?.playThrow();
   }
 
   update(time: number, delta: number): void {
@@ -197,20 +211,21 @@ export class GameScene extends Phaser.Scene {
       this.player.drive(0, 0);
     }
 
-    // --- worek: przytrzymanie Spacji / przycisku otwiera ---
-    this.bag.update(this.space.isDown || this.touchBag);
+    // --- worek: przytrzymanie Spacji / przycisku otwiera (zużywa energię) ---
+    this.bag.update(this.space.isDown || this.touchBag, dtSec, time);
+    this.hud.setEnergy(this.bag.energyRatio, this.bag.isExhausted);
 
     // --- faza bossa: koniec po 10 s ---
     if (this.bossActive && time >= this.bossEndsAt) this.endBossPhase();
 
     // --- spawn: faza bossa zrzuca boss_bary, inaczej normalny katalog ---
     if (time >= this.nextSpawnAt) {
-      const x = Phaser.Math.Between(28, GAME_WIDTH - 28);
       if (this.bossActive) {
-        this.spawnItem(x, BOSS_DROP);
+        this.spawnBossDrop();
         this.nextSpawnAt = time + BOSS_PHASE.dropEveryMs;
       } else {
-        this.spawnItem(x, Phaser.Utils.Array.GetRandom(ITEM_TYPES));
+        const x = Phaser.Math.Between(28, GAME_WIDTH - 28);
+        this.spawnItem(x, randomWeightedItemType());
         this.nextSpawnAt = time + FALLING.spawnEveryMs;
       }
     }
@@ -219,15 +234,25 @@ export class GameScene extends Phaser.Scene {
     for (const obj of this.items.getChildren()) {
       const item = obj as FallingItem;
       if (!item.active) continue;
+      if (item.getData("swallowing")) continue;
       if (item.y > GAME_HEIGHT + 20 || item.y < -60) {
         item.disableBody(true, true);
         continue;
       }
-      const overlapping = this.bag.overlaps(item);
+      this.bag.updateItemLayer(item, dtSec);
+      const overlapMode = this.bag.isOpen ? "open" : "closed";
+      const overlapping = this.bag.overlaps(item, overlapMode);
+      if (!overlapping) {
+        item.setData("bounced", false);
+      }
       const outcome = resolveCatch(this.bag.isOpen, overlapping);
       if (outcome === "catch") {
         this.catchItem(item);
-      } else if (outcome === "bounce") {
+      } else if (
+        outcome === "bounce" &&
+        isCollectibleItemType(item.itemType) &&
+        this.bag.isClosedForContact(time)
+      ) {
         this.bounceItem(item);
       }
     }
@@ -242,8 +267,38 @@ export class GameScene extends Phaser.Scene {
     else if (reason === "timeout") this.end("timeout");
   }
 
-  /** Złapanie otwartym workiem → punkty z katalogu + ekwipunek + progi + efekty. */
+  /** Złapanie: przedmiot wciąga się do otworu, potem punkty i efekty. */
   private catchItem(item: FallingItem): void {
+    if (item.getData("swallowing")) return;
+    item.setData("swallowing", true);
+    const body = item.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(0, 0);
+    body.enable = false;
+
+    const mouth = this.bag.mouthPoint;
+    item.setDepth(BAG.depth.itemFront);
+    item.setAlpha(1);
+    this.tweens.killTweensOf(item);
+    this.tweens.add({
+      targets: item,
+      x: mouth.x,
+      y: mouth.y,
+      duration: BAG.swallowSlideMs,
+      ease: "Cubic.in",
+      onComplete: () => {
+        item.setDepth(BAG.depth.itemBehind);
+        this.tweens.add({
+          targets: item,
+          alpha: 0,
+          duration: BAG.swallowFadeMs,
+          ease: "Quad.in",
+          onComplete: () => this.finishCatch(item),
+        });
+      },
+    });
+  }
+
+  private finishCatch(item: FallingItem): void {
     this.sfx.enemyDeath();
     this.score.addCatch(item.itemType);
     this.inventory.add(item.itemType);
@@ -260,36 +315,22 @@ export class GameScene extends Phaser.Scene {
     for (const m of this.npcTracker.crossed(score)) this.showNpc(m);
   }
 
-  /** Start fazy bossa: 10 s deszczu boss_barów, wstrzymanie normalnego spawnu. */
+  /** Start fazy bossa: scena z okienkiem + deszcz sztabek z lady. */
   private startBossPhase(): void {
     this.bossActive = true;
     this.bossEndsAt = this.time.now + BOSS_PHASE.durationMs;
-    this.nextSpawnAt = this.time.now; // od razu pierwszy boss_bar
-    if (!this.bossSprite) {
-      this.bossSprite = this.add
-        .image(GAME_WIDTH / 2, 150, TEXTURE.boss)
-        .setDepth(6);
-      this.tweens.add({
-        targets: this.bossSprite,
-        x: { from: GAME_WIDTH * 0.3, to: GAME_WIDTH * 0.7 },
-        duration: 1400,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.InOut",
-      });
-    }
+    this.nextSpawnAt = this.time.now;
+    if (!this.bossDisplay) this.bossDisplay = new BossEncounterDisplay(this);
+    this.bossDisplay.show(this.bossCount);
+    this.bossCount++;
     this.cameras.main.flash(180, 255, 0, 170);
   }
 
-  /** Koniec fazy bossa: chowamy bossa, wracają zwykłe spawny. */
+  /** Koniec fazy bossa: chowamy scenografię, wracają zwykłe spawny. */
   private endBossPhase(): void {
     this.bossActive = false;
     this.nextSpawnAt = this.time.now;
-    if (this.bossSprite) {
-      this.tweens.killTweensOf(this.bossSprite);
-      this.bossSprite.destroy();
-      this.bossSprite = undefined;
-    }
+    this.bossDisplay?.hide();
   }
 
   /**
@@ -316,10 +357,32 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** Kontakt z zamkniętym workiem → przedmiot odbija się, gracz traci HP. */
+  /** Kontakt z zamkniętym workiem → przedmiot odbija się, gracz traci HP (raz na przejście). */
   private bounceItem(item: FallingItem): void {
+    if (item.getData("bounced")) return;
+    item.setData("bounced", true);
     item.bounceOff(this.player.x);
     if (this.winStarted) return; // rundka honorowa: bez obrażeń
+
+    // Twardy guard: nigdy nie zabieraj HP od czegoś, czego gracz nie widzi
+    // (przedmiot za workiem / w trakcie wciągania / przezroczysty).
+    const hidden =
+      !item.visible || item.alpha < 0.9 || item.depth < BAG.depth.itemFront;
+    if (hidden) {
+      if (import.meta.env.DEV) {
+        console.warn("[bag] pominięto odbicie od niewidocznego przedmiotu", {
+          type: item.itemType,
+          texture: item.texture?.key,
+          depth: item.depth,
+          alpha: item.alpha,
+          visible: item.visible,
+          x: Math.round(item.x),
+          y: Math.round(item.y),
+        });
+      }
+      return;
+    }
+
     if (!this.player.takeDamage(BAG.contactDamage, this.time.now)) return;
     this.afterPlayerHit(this.player.x, this.player.y);
   }
@@ -350,10 +413,10 @@ export class GameScene extends Phaser.Scene {
     const r = TOUCH.bagBtnRadius;
     const bx = GAME_WIDTH - r - 18;
     const by = GAME_HEIGHT - r - 22;
-    this.bagBtn = this.add.circle(bx, by, r, COLORS.yellow, 0.12).setDepth(15);
-    this.bagBtn.setStrokeStyle(2, COLORS.yellow, 0.7);
+    this.bagBtn = this.add.circle(bx, by, r, COLORS.gold, 0.14).setDepth(15);
+    this.bagBtn.setStrokeStyle(2, COLORS.gold, 0.75);
     this.add
-      .text(bx, by, "WOREK", { fontFamily: "monospace", fontSize: "13px", color: COLOR_HEX.yellow })
+      .text(bx, by, "WOREK", { fontFamily: "monospace", fontSize: "13px", color: COLOR_HEX.gold })
       .setOrigin(0.5)
       .setDepth(16);
     this.bagBtn.setInteractive();
@@ -373,11 +436,11 @@ export class GameScene extends Phaser.Scene {
     this.joyBaseX = TOUCH.joyMargin + TOUCH.joyRadius;
     this.joyBaseY = GAME_HEIGHT - TOUCH.joyMargin - TOUCH.joyRadius;
     this.joyBase = this.add
-      .circle(this.joyBaseX, this.joyBaseY, TOUCH.joyRadius, COLORS.magenta, 0.1)
+      .circle(this.joyBaseX, this.joyBaseY, TOUCH.joyRadius, COLORS.fiat, 0.12)
       .setDepth(15);
-    this.joyBase.setStrokeStyle(2, COLORS.magenta, 0.55);
+    this.joyBase.setStrokeStyle(2, COLORS.fiat, 0.55);
     this.joyKnob = this.add
-      .circle(this.joyBaseX, this.joyBaseY, TOUCH.knobRadius, COLORS.magenta, 0.35)
+      .circle(this.joyBaseX, this.joyBaseY, TOUCH.knobRadius, COLORS.fiat, 0.38)
       .setDepth(16);
 
     this.input.on("pointerdown", this.onJoyInput, this);
@@ -438,9 +501,9 @@ export class GameScene extends Phaser.Scene {
         .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "⏸ PAUZA\n\nP — wznów", {
           fontFamily: "monospace",
           fontSize: "26px",
-          color: COLOR_HEX.cyan,
+          color: COLOR_HEX.gold,
           align: "center",
-          backgroundColor: "#0a0e17",
+          backgroundColor: COLOR_HEX.panel,
           padding: { x: 22, y: 18 },
         })
         .setOrigin(0.5)

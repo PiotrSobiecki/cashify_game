@@ -6,7 +6,7 @@ import {
   CASHIFY_URL,
   LEADERBOARD_SIZE,
 } from "../config";
-import { RetroGridBackground } from "../ui/RetroGridBackground";
+import { CurrencyBackdrop } from "../ui/CurrencyBackdrop";
 import {
   findPlayerIndex,
   qualifies,
@@ -32,9 +32,9 @@ export interface EndData {
 }
 
 const TITLES: Record<EndData["reason"], { text: string; color: string }> = {
-  win: { text: "MOŻESZ SIĘ SKESZOWAĆ!", color: COLOR_HEX.yellow },
-  death: { text: "KONIEC GRY", color: COLOR_HEX.magenta },
-  timeout: { text: "CZAS MINĄŁ", color: COLOR_HEX.yellow },
+  win: { text: "MOŻESZ SIĘ SKESZOWAĆ!", color: COLOR_HEX.gold },
+  death: { text: "KONIEC GRY", color: COLOR_HEX.warn },
+  timeout: { text: "CZAS MINĄŁ", color: COLOR_HEX.goldLight },
 };
 
 const RANKING_TOP_Y = 150;
@@ -46,14 +46,14 @@ function formatTime(ms: number): string {
 
 /** Ekran końcowy: wynik + globalny ranking TOP 10 (z wpisem imienia) + retry + YouTube. */
 export class EndScene extends Phaser.Scene {
-  private bg!: RetroGridBackground;
+  private bg!: CurrencyBackdrop;
 
   constructor() {
     super("EndScene");
   }
 
   create(data: EndData): void {
-    this.bg = new RetroGridBackground(this);
+    this.bg = new CurrencyBackdrop(this);
 
     // Jeśli muzyka gra, leci dalej (nie urywamy jej przy końcu); M ją wł./wył.
     const music = new MusicController(this);
@@ -79,24 +79,23 @@ export class EndScene extends Phaser.Scene {
         {
           fontFamily: "monospace",
           fontSize: "16px",
-          color: COLOR_HEX.cyan,
+          color: COLOR_HEX.text,
         },
       )
       .setOrigin(0.5);
 
     this.renderLoot(data.loot);
 
-    // przyciski (klik zawsze; Enter dopiero gdy nie ma już pola na imię)
     const cta = this.makeButton(
       GAME_HEIGHT - 150,
       "→ IDŹ DO CASHIFY",
-      COLOR_HEX.yellow,
+      COLOR_HEX.gold,
     );
     cta.on("pointerdown", () => window.open(CASHIFY_URL, "_blank", "noopener"));
     const retry = this.makeButton(
       GAME_HEIGHT - 94,
       "↻ ZAGRAJ JESZCZE RAZ",
-      COLOR_HEX.green,
+      COLOR_HEX.cash,
     );
     retry.on("pointerdown", () => this.scene.start("GameScene"));
 
@@ -120,7 +119,7 @@ export class EndScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, y0, "— TWOJE ZDOBYCZE —", {
         fontFamily: "monospace",
         fontSize: "13px",
-        color: COLOR_HEX.yellow,
+        color: COLOR_HEX.gold,
       })
       .setOrigin(0.5);
 
@@ -137,7 +136,7 @@ export class EndScene extends Phaser.Scene {
           {
             fontFamily: "monospace",
             fontSize: "11px",
-            color: COLOR_HEX.cyan,
+            color: COLOR_HEX.fiat,
           },
         )
         .setOrigin(0.5, 0);
@@ -187,7 +186,7 @@ export class EndScene extends Phaser.Scene {
         {
           fontFamily: "monospace",
           fontSize: "14px",
-          color: COLOR_HEX.magenta,
+          color: COLOR_HEX.warn,
           align: "center",
         },
       )
@@ -205,7 +204,7 @@ export class EndScene extends Phaser.Scene {
         {
           fontFamily: "monospace",
           fontSize: "13px",
-          color: COLOR_HEX.magenta,
+          color: COLOR_HEX.gold,
         },
       )
       .setOrigin(0.5);
@@ -215,7 +214,7 @@ export class EndScene extends Phaser.Scene {
         .text(GAME_WIDTH / 2, RANKING_TOP_Y + 30, "(brak wyników)", {
           fontFamily: "monospace",
           fontSize: "13px",
-          color: COLOR_HEX.cyan,
+          color: COLOR_HEX.text,
         })
         .setOrigin(0.5);
       return;
@@ -232,10 +231,10 @@ export class EndScene extends Phaser.Scene {
       ).padStart(8, " ");
       const score = e.score.toString().padStart(4, " ");
       const color = isMine
-        ? COLOR_HEX.yellow
+        ? COLOR_HEX.gold
         : e.reason === "win"
-          ? COLOR_HEX.green
-          : COLOR_HEX.cyan;
+          ? COLOR_HEX.cash
+          : COLOR_HEX.fiat;
       this.add
         .text(
           GAME_WIDTH / 2,
@@ -261,28 +260,28 @@ export class EndScene extends Phaser.Scene {
     const wrap = document.createElement("div");
     wrap.style.cssText =
       "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;" +
-      "background:rgba(10,14,23,0.85);z-index:1000;font-family:monospace;";
+      "background:rgba(15,20,25,0.88);z-index:1000;font-family:monospace;";
     const box = document.createElement("div");
     box.style.cssText =
-      "background:#0d1622;border:2px solid #00f0ff;border-radius:10px;padding:22px 26px;" +
-      "text-align:center;box-shadow:0 0 26px rgba(0,240,255,0.45);";
+      "background:#1a222d;border:2px solid #C9A227;border-radius:10px;padding:22px 26px;" +
+      "text-align:center;box-shadow:0 0 26px rgba(201,162,39,0.35);";
     const label = document.createElement("div");
     label.textContent = `TOP ${LEADERBOARD_SIZE}! WPISZ IMIĘ:`;
     label.style.cssText =
-      "color:#00f0ff;font-size:15px;margin-bottom:12px;letter-spacing:1px;";
+      "color:#C9A227;font-size:15px;margin-bottom:12px;letter-spacing:1px;";
     const input = document.createElement("input");
     input.maxLength = 12;
     input.placeholder = "GRACZ";
     input.autocapitalize = "characters";
     input.style.cssText =
       "font-family:monospace;font-size:20px;text-align:center;text-transform:uppercase;" +
-      "padding:8px 10px;width:180px;background:#08111c;color:#00ff88;border:1px solid #00f0ff;" +
+      "padding:8px 10px;width:180px;background:#0f1419;color:#3DB87A;border:1px solid #6B8CAE;" +
       "border-radius:6px;outline:none;";
     const btn = document.createElement("button");
     btn.textContent = "OK";
     btn.style.cssText =
-      "display:block;margin:14px auto 0;font-family:monospace;font-size:18px;color:#0a0e17;" +
-      "background:#00ff88;border:none;border-radius:6px;padding:8px 28px;cursor:pointer;";
+      "display:block;margin:14px auto 0;font-family:monospace;font-size:18px;color:#0f1419;" +
+      "background:#3DB87A;border:none;border-radius:6px;padding:8px 28px;cursor:pointer;";
     box.append(label, input, btn);
     wrap.append(box);
     document.body.append(wrap);
@@ -320,7 +319,7 @@ export class EndScene extends Phaser.Scene {
         fontFamily: "monospace",
         fontSize: "20px",
         color,
-        backgroundColor: "#10202c",
+        backgroundColor: COLOR_HEX.panel,
         padding: { x: 14, y: 8 },
       })
       .setOrigin(0.5)
