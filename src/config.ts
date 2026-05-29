@@ -21,6 +21,28 @@ export const SESSION_MAX_MS = 6 * 60 * 1000 + 30 * 1000;
 /** Liczba żyć w rundzie (PRD #17). Każde życie = pełne HP. */
 export const LIVES = 3;
 
+/**
+ * Worek (Cashify, Faza 1): gracz przytrzymuje Spację, by otworzyć worek nad
+ * sobą. Otwarty worek łapie nałożony przedmiot; zamknięty — przedmiot odbija
+ * się i zabiera HP. `catchRadius` to zasięg strefy łapania od środka gracza.
+ */
+export const BAG = {
+  catchRadius: 50,
+  contactDamage: 20, // utrata HP przy kontakcie z zamkniętym workiem
+} as const;
+
+/**
+ * Faza 1: jeden testowy przedmiot (pełny katalog krypto/fiat/metale w Fazie 2).
+ * Spada pionowo w dół; złapanie otwartym workiem daje `testPoints`.
+ */
+export const FALLING = {
+  speed: 160,
+  testPoints: 20,
+  spawnEveryMs: 750,
+  bounceUpSpeed: 220, // odrzut w górę po odbiciu od zamkniętego worka
+  bounceSideSpeed: 120,
+} as const;
+
 /** Kara punktowa za śmierć (PRD #18): odejmowana, nie schodzi poniżej 0. */
 export const RESPAWN_PENALTY = 15;
 
