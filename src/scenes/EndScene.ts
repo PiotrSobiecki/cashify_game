@@ -16,6 +16,7 @@ import {
 import { fetchTopScores, submitScore } from "../systems/scoreApi";
 import { MusicController } from "../systems/MusicController";
 import { ITEMS, type ItemType } from "../data/items";
+import { formatPln } from "../utils/formatPln";
 
 /** Wpis listy zdobyczy (typ × ilość). */
 export interface LootEntry {
@@ -75,7 +76,7 @@ export class EndScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         104,
-        `WYNIK ${data.score} · CZAS ${formatTime(data.timeMs)}`,
+        `${formatPln(data.score)} · CZAS ${formatTime(data.timeMs)}`,
         {
           fontFamily: "monospace",
           fontSize: "16px",
@@ -132,7 +133,7 @@ export class EndScene extends Phaser.Scene {
         .text(
           colX[col],
           y0 + 22 + row * 16,
-          `${ITEMS[e.type].label} ×${e.count}`,
+          `${ITEMS[e.type].label} ×${e.count} (${formatPln(ITEMS[e.type].valuePln * e.count)})`,
           {
             fontFamily: "monospace",
             fontSize: "11px",

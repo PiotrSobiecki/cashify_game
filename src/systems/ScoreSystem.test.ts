@@ -1,44 +1,38 @@
 import { describe, it, expect } from "vitest";
 import { ScoreSystem } from "./ScoreSystem";
-import { RESPAWN_PENALTY } from "../config";
 import { ITEMS } from "../data/items";
 
-describe("ScoreSystem — łapanie i wynik", () => {
+describe("ScoreSystem — łapanie i wynik w PLN", () => {
   it("starts with a score of zero", () => {
     expect(new ScoreSystem().score).toBe(0);
   });
 
-  it("awards flat catalog points for a caught item", () => {
+  it("adds catalog valuePln for a caught item", () => {
     const s = new ScoreSystem();
-    expect(s.addCatch("btc")).toBe(ITEMS.btc.points);
-    expect(s.score).toBe(ITEMS.btc.points);
+    expect(s.addCatch("btc")).toBe(ITEMS.btc.valuePln);
+    expect(s.score).toBe(ITEMS.btc.valuePln);
   });
 
-  it("sums catalog points across different item types", () => {
+  it("sums valuePln across different item types", () => {
     const s = new ScoreSystem();
     s.addCatch("btc");
     s.addCatch("pln");
-    expect(s.score).toBe(ITEMS.btc.points + ITEMS.pln.points);
+    expect(s.score).toBe(ITEMS.btc.valuePln + ITEMS.pln.valuePln);
   });
 
-  it("adds an arbitrary bonus", () => {
+  it("adds an arbitrary bonus in PLN", () => {
     const s = new ScoreSystem();
     s.addCatch("pln");
-    expect(s.addBonus(50)).toBe(50);
-    expect(s.score).toBe(ITEMS.pln.points + 50);
+    expect(s.addBonus(50_000)).toBe(50_000);
+    expect(s.score).toBe(ITEMS.pln.valuePln + 50_000);
   });
 });
 
-describe("ScoreSystem — kara za śmierć", () => {
-  it("subtracts the penalty on death, never below zero", () => {
+describe("ScoreSystem — strata życia", () => {
+  it("keeps score on death (no penalty)", () => {
     const s = new ScoreSystem();
-    s.addCatch("btc"); // 30
+    s.addCatch("btc");
     s.onDeath();
-    expect(s.score).toBe(ITEMS.btc.points - RESPAWN_PENALTY);
-
-    const t = new ScoreSystem();
-    t.addBonus(10);
-    t.onDeath(); // 10 - 15 → 0
-    expect(t.score).toBe(0);
+    expect(s.score).toBe(ITEMS.btc.valuePln);
   });
 });

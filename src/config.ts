@@ -1,26 +1,30 @@
 // Stałe gry Cashify — pojedyncze źródło prawdy, do tuningu w playteście.
 
-/** Cel rundy = 3000 pkt. Wygrana po czasie do 3000 (najszybszy = wyżej w rankingu). */
-export const WIN_SCORE = 3000;
+/** Cel rundy = 5 mln zł (ostatni boss Jakub). Po nim 30 s rundki i koniec. Ranking = najszybszy czas. */
+export const WIN_TARGET_PLN = 5_000_000;
 
-/** Twardy limit sesji (zabezpieczenie): 6:30. */
-export const SESSION_MAX_MS = 6 * 60 * 1000 + 30 * 1000;
+/** @deprecated Alias — wynik w PLN; używaj WIN_TARGET_PLN. */
+export const WIN_SCORE = WIN_TARGET_PLN;
 
-/** Bossy przy 900 / 1900 / 2900 pkt. */
-export const BOSS_MILESTONES = [900, 1900, 2900] as const;
-export const NPC_MILESTONES = [1000, 2000, 3000] as const;
+/** Twardy limit sesji (zabezpieczenie): 30:00. */
+export const SESSION_MAX_MS = 30 * 60 * 1000;
+
+/** Bossy: Jacek 0,5 mln · Weronika 2 mln · Jakub 5 mln (3. boss = meta + rundka 30 s). */
+export const BOSS_MILESTONES = [500_000, 2_000_000, 5_000_000] as const;
+/** Dymki z kwestią 100 tys. PRZED każdym bossem (zapowiedź postaci). */
+export const NPC_MILESTONES = [400_000, 1_900_000, 4_900_000] as const;
 
 /** Faza bossa: 10 s deszczu specjalnych sztabek, wstrzymany normalny spawn. */
 export const BOSS_PHASE = {
   durationMs: 10000,
-  dropEveryMs: 520,
+  dropEveryMs: 400,
 } as const;
 
 /** Popup pracownika kantoru — ile trzyma się na ekranie (zegar wyścigu stoi). */
 export const NPC_POPUP_MS = 4000;
 
-/** Rundka honorowa po osiągnięciu 3000: ile gra trwa jeszcze (czas zamrożony). */
-export const GRACE_MS = 10000;
+/** Rundka honorowa po osiągnięciu 5 mln zł: bezwzględnie 30 s, potem koniec. */
+export const GRACE_MS = 30000;
 
 /** CTA na ekranie końcowym — kantor Cashify. */
 export const CASHIFY_URL = "https://cashify.eu";
@@ -28,8 +32,11 @@ export const CASHIFY_URL = "https://cashify.eu";
 /** Liczba żyć w rundzie. Każde życie = pełne HP. */
 export const LIVES = 3;
 
-/** Kara punktowa za śmierć: odejmowana, nie schodzi poniżej 0. */
-export const RESPAWN_PENALTY = 15;
+/** @deprecated Kara za śmierć wyłączona — wynik zostaje przy respawnie. */
+export const RESPAWN_PENALTY_PLN = 0;
+
+/** @deprecated Alias w PLN. */
+export const RESPAWN_PENALTY = RESPAWN_PENALTY_PLN;
 
 /**
  * Worek: gracz przytrzymuje Spację, by otworzyć worek nad sobą. Otwarty worek
@@ -85,10 +92,10 @@ export const BAG = {
   transitionMs: 140, // czas klatki pośredniej worka przy przełączeniu
 } as const;
 
-/** Spadające przedmioty (typy z katalogu items.ts). */
+/** Spadające przedmioty (typy z katalogu items.ts). ~500 ms ≈ cel ~0,5 mln zł / 5 min przy typowym łapaniu. */
 export const FALLING = {
-  speed: 160,
-  spawnEveryMs: 750,
+  speed: 175,
+  spawnEveryMs: 500,
   bounceUpSpeed: 220, // odrzut w górę po odbiciu od zamkniętego worka
   bounceSideSpeed: 120,
 } as const;

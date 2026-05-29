@@ -1,34 +1,28 @@
 /**
- * Czysta logika punktacji Cashify (testowalna bez Phasera).
- * - punkty za złapany przedmiot (katalog items.ts),
- * - dowolny bonus (np. specjalny drop),
- * - kara za śmierć (−RESPAWN_PENALTY, nie poniżej 0).
+ * Wynik rundy w PLN — suma valuePln złapanych przedmiotów.
  */
-import { RESPAWN_PENALTY } from "../config";
 import { ITEMS, type ItemType } from "../data/items";
 
 export class ScoreSystem {
   private _score = 0;
 
+  /** Skumulowana wartość w PLN. */
   get score(): number {
     return this._score;
   }
 
-  /** Łapanie przedmiotu: płaskie punkty z katalogu. Zwraca przyznane punkty. */
+  /** Łapanie: dodaje valuePln z katalogu. Zwraca przyznaną kwotę. */
   addCatch(type: ItemType): number {
-    const points = ITEMS[type].points;
-    this._score += points;
-    return points;
+    const value = ITEMS[type].valuePln;
+    this._score += value;
+    return value;
   }
 
-  /** Dowolny bonus punktowy. */
-  addBonus(points: number): number {
-    this._score += points;
-    return points;
+  addBonus(valuePln: number): number {
+    this._score += valuePln;
+    return valuePln;
   }
 
-  /** Kara za śmierć (PRD #18): odejmuje punkty (nie poniżej 0). */
-  onDeath(): void {
-    this._score = Math.max(0, this._score - RESPAWN_PENALTY);
-  }
+  /** Strata życia — wynik zostaje (bez kary). */
+  onDeath(): void {}
 }

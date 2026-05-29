@@ -1,9 +1,10 @@
 import Phaser from "phaser";
-import { COLOR_HEX, COLORS, WIN_SCORE, GAME_WIDTH } from "../config";
+import { COLOR_HEX, COLORS, WIN_TARGET_PLN, GAME_WIDTH } from "../config";
+import { formatPlnCompact } from "../utils/formatPln";
 
 /**
  * HUD rozgrywki Cashify. Czytelne wskaźniki:
- *  - WYNIK x / 3000 + złoty pasek postępu do celu,
+ *  - WYNIK w PLN / cel 10 mln + złoty pasek postępu,
  *  - HP (zielony→żółty→czerwony),
  *  - czas wyścigu i pozostałe życia (prawy górny róg).
  */
@@ -42,11 +43,10 @@ export class HUD {
       .setOrigin(1, 0)
       .setDepth(15);
 
-    // WYNIK + pasek postępu do celu (3000)
     this.label = scene.add
-      .text(16, 12, `WYNIK 0 / ${WIN_SCORE}`, {
+      .text(16, 12, `0 / ${formatPlnCompact(WIN_TARGET_PLN)}`, {
         fontFamily: "monospace",
-        fontSize: "18px",
+        fontSize: "16px",
         color: COLOR_HEX.gold,
       })
       .setDepth(15);
@@ -84,11 +84,10 @@ export class HUD {
     this.energyFill.fillColor = exhausted ? COLORS.warn : COLORS.goldLight;
   }
 
-  /** WYNIK + złoty pasek postępu do celu (WIN_SCORE). */
-  setRaceProgress(score: number): void {
-    const ratio = Phaser.Math.Clamp(score / WIN_SCORE, 0, 1);
+  setRaceProgress(scorePln: number): void {
+    const ratio = Phaser.Math.Clamp(scorePln / WIN_TARGET_PLN, 0, 1);
     this.progressFill.width = this.progressWidth * ratio;
-    this.label.setText(`WYNIK ${score} / ${WIN_SCORE}`);
+    this.label.setText(`${formatPlnCompact(scorePln)} / ${formatPlnCompact(WIN_TARGET_PLN)}`);
   }
 
   setHp(ratio: number): void {

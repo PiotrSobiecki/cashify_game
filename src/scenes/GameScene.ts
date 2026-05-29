@@ -13,7 +13,6 @@ import {
   NPC_MILESTONES,
   BOSS_PHASE,
   NPC_POPUP_MS,
-  WIN_SCORE,
   GRACE_MS,
 } from "../config";
 import { Player } from "../entities/Player";
@@ -26,7 +25,7 @@ import { RaceClock } from "../systems/RaceClock";
 import { MilestoneTracker } from "../systems/MilestoneTracker";
 import { resolveCatch } from "../systems/bagCatch";
 import { BOSS_DROP, isCollectibleItemType, randomWeightedItemType, type ItemType } from "../data/items";
-import { NPCS } from "../data/npc";
+import { NPCS, WIN_NPC } from "../data/npc";
 import { CurrencyBackdrop } from "../ui/CurrencyBackdrop";
 import { HUD } from "../ui/HUD";
 import { EmployeePopup } from "../ui/EmployeePopup";
@@ -41,8 +40,8 @@ const SPAWN_Y = GAME_HEIGHT - BAG.displayHeight / 2 - BAG.bottomEdgePad;
 
 /**
  * Rdzeń rozgrywki Cashify (Faza 1): gracz porusza workiem, przytrzymaniem
- * Spacji otwiera go nad sobą i łapie spadające przedmioty (punkty). Zamknięty
- * worek — przedmiot odbija się i zabiera HP. 3 życia; śmierć = respawn −15 pkt.
+ * Spacji otwiera go nad sobą i łapie spadające przedmioty (PLN). Zamknięty
+ * worek — przedmiot odbija się i zabiera HP. 3 życia; śmierć = respawn bez utraty PLN.
  */
 export class GameScene extends Phaser.Scene {
   private bg!: CurrencyBackdrop;
@@ -72,7 +71,7 @@ export class GameScene extends Phaser.Scene {
   private bossEndsAt = 0;
   private bossDisplay?: BossEncounterDisplay;
   private bossCount = 0; // który to boss (0→Jacek, 1→Weronika, 2→Jakub)
-  private winStarted = false; // sekwencja wygranej po 3000 (rundka honorowa)
+  private winStarted = false; // sekwencja wygranej po 10 mln zł (rundka honorowa)
 
   private music!: MusicController;
   private sfx!: Sfx;
@@ -111,8 +110,8 @@ export class GameScene extends Phaser.Scene {
     this.run = new RunController();
     this.clock = new RaceClock();
     this.bossTracker = new MilestoneTracker([...BOSS_MILESTONES]);
-    // 3000 (Jakub) prowadzi sekwencja wygranej; tracker NPC tylko 1000/2000.
-    this.npcTracker = new MilestoneTracker(NPC_MILESTONES.filter((m) => m < WIN_SCORE));
+    // Jakub przy wygranej (10 mln); popupy NPC przy 0,5 mln i 2 mln.
+    this.npcTracker = new MilestoneTracker([...NPC_MILESTONES]);
     this.popup = new EmployeePopup(this);
 
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -258,7 +257,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // --- czas + koniec rundy ---
-    // Wygraną (3000) prowadzi sekwencja z rundką honorową (startWinSequence),
+    // Wygraną (10 mln zł) prowadzi sekwencja z rundką honorową (startWinSequence),
     // więc tu kończymy tylko na twardym timeoucie.
     const elapsed = this.clock.elapsed(this.time.now);
     this.hud.setTime(elapsed, SESSION_MAX_MS);
@@ -267,7 +266,7 @@ export class GameScene extends Phaser.Scene {
     else if (reason === "timeout") this.end("timeout");
   }
 
-  /** Złapanie: przedmiot wciąga się do otworu, potem punkty i efekty. */
+  /** Złapanie: przedmiot wciąga się do otworu, potem PLN i efekty. */
   private catchItem(item: FallingItem): void {
     if (item.getData("swallowing")) return;
     item.setData("swallowing", true);
@@ -334,15 +333,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Wygrana (3000): zamraża czas (= wynik speedrun), popup Jakuba, rundka
+   * Wygrana (10 mln zł): zamraża czas (= wynik speedrun), popup Jakuba, rundka
    * honorowa ~10 s (gra leci, zegar stoi), potem ekran końcowy.
    */
   private startWinSequence(): void {
     if (this.winStarted) return;
     this.winStarted = true;
     this.clock.pause(this.time.now);
-    const jakub = NPCS[WIN_SCORE];
-    if (jakub) this.popup.show(jakub.key, jakub.name, jakub.line, NPC_POPUP_MS, () => {});
+    this.popup.show(WIN_NPC.key, WIN_NPC.name, WIN_NPC.line, NPC_POPUP_MS, () => {});
     this.cameras.main.flash(220, 255, 215, 0);
     this.time.delayedCall(GRACE_MS, () => this.end("win"));
   }
@@ -387,7 +385,7 @@ export class GameScene extends Phaser.Scene {
     this.afterPlayerHit(this.player.x, this.player.y);
   }
 
-  /** Reakcja na obrażenia: efekty + respawn (kara −15) lub koniec gry. */
+  /** Reakcja na obrażenia: efekty + respawn (wynik bez zmian) lub koniec gry. */
   private afterPlayerHit(fxX: number, fxY: number): void {
     this.burst.explode(8, fxX, fxY);
     this.cameras.main.shake(130, 0.009);

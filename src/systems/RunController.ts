@@ -1,12 +1,11 @@
 /**
  * Czysta logika przebiegu rundy Cashify (testowalna bez Phasera).
  * Trzyma życia i wyznacza stan końcowy + powód:
- *  - win     — osiągnięto cel WIN_SCORE (3000 pkt); o miejscu w konkursie
- *              decyduje czas (najszybszy do 3000), liczony osobno (RaceClock),
+ *  - win     — osiągnięto cel WIN_TARGET_PLN (10 mln zł); ranking po czasie,
  *  - death   — utracono ostatnie życie,
  *  - timeout — przekroczono twardy limit czasu (SESSION_MAX_MS).
  */
-import { LIVES, WIN_SCORE, SESSION_MAX_MS } from "../config";
+import { LIVES, WIN_TARGET_PLN, SESSION_MAX_MS } from "../config";
 
 export type EndReason = "win" | "death" | "timeout";
 
@@ -42,12 +41,11 @@ export class RunController {
   }
 
   /**
-   * Sprawdza warunki końca. Wygrana (score ≥ WIN_SCORE) ma priorytet nad
-   * timeoutem. Pierwszy ustalony powód jest trwały (idempotencja).
+   * Sprawdza warunki końca. Wygrana (≥ WIN_TARGET_PLN) ma priorytet nad timeoutem.
    */
   update(score: number, elapsedMs: number): EndReason | null {
     if (this._ended) return this._ended;
-    if (score >= WIN_SCORE) this._ended = "win";
+    if (score >= WIN_TARGET_PLN) this._ended = "win";
     else if (elapsedMs >= SESSION_MAX_MS) this._ended = "timeout";
     return this._ended;
   }

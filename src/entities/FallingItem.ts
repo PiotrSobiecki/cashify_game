@@ -23,9 +23,9 @@ export class FallingItem extends Phaser.Physics.Arcade.Image {
     super(scene, x, y, TEXTURE.itemFallback);
   }
 
-  /** Punkty za złapanie (z katalogu). */
-  get points(): number {
-    return ITEMS[this.itemType].points;
+  /** Wartość w PLN za złapanie (z katalogu). */
+  get valuePln(): number {
+    return ITEMS[this.itemType].valuePln;
   }
 
   /** Aktywuje przedmiot danego typu u góry ekranu i nadaje mu spadek. */

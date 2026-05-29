@@ -1,27 +1,28 @@
 import { describe, it, expect } from "vitest";
 import { MilestoneTracker } from "./MilestoneTracker";
 
-describe("MilestoneTracker — jednorazowe progi", () => {
+describe("MilestoneTracker", () => {
   it("reports a threshold when the score first crosses it", () => {
-    const m = new MilestoneTracker([1000, 2000, 3000]);
-    expect(m.crossed(1000)).toEqual([1000]);
+    const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
+    expect(m.crossed(499_999)).toEqual([]);
+    expect(m.crossed(500_000)).toEqual([500_000]);
   });
 
   it("fires each threshold only once", () => {
-    const m = new MilestoneTracker([1000, 2000, 3000]);
-    expect(m.crossed(1000)).toEqual([1000]);
-    expect(m.crossed(1500)).toEqual([]); // 1000 już odpalony, 2000 jeszcze nie
+    const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
+    expect(m.crossed(2_500_000)).toEqual([500_000, 2_000_000]);
+    expect(m.crossed(3_000_000)).toEqual([]);
   });
 
-  it("does not re-fire after the score dips (respawn −15) and climbs back", () => {
-    const m = new MilestoneTracker([1000, 2000, 3000]);
-    m.crossed(1005);
-    expect(m.crossed(990)).toEqual([]); // śmierć: −15 schodzi pod próg
-    expect(m.crossed(1010)).toEqual([]); // powrót nad 1000 NIE odpala ponownie
+  it("does not re-fire after the score dips and climbs back", () => {
+    const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
+    m.crossed(5_000_000);
+    expect(m.crossed(4_000_000)).toEqual([]);
+    expect(m.crossed(5_000_000)).toEqual([]);
   });
 
-  it("returns every threshold newly crossed in one jump", () => {
-    const m = new MilestoneTracker([1000, 2000, 3000]);
-    expect(m.crossed(2500)).toEqual([1000, 2000]);
+  it("reports multiple thresholds crossed in one jump", () => {
+    const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
+    expect(m.crossed(5_000_000)).toEqual([500_000, 2_000_000, 5_000_000]);
   });
 });
