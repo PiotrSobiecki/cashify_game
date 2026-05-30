@@ -1,4 +1,4 @@
--- Ranking gry Firewall. Uruchom raz: psql "$DATABASE_URL" -f schema.sql
+-- Ranking gry Cashify. Uruchom raz: psql "$DATABASE_URL" -f schema.sql
 CREATE TABLE IF NOT EXISTS scores (
   id         BIGSERIAL PRIMARY KEY,
   name       TEXT NOT NULL,

@@ -32,7 +32,7 @@ export class BootScene extends Phaser.Scene {
     // 404 (mp3 / brakujący avatar) nie może wywalić preloadu.
     this.load.on("loaderror", (file: Phaser.Loader.File) => {
       if (file.key === MUSIC_KEY) {
-        console.warn("[audio] Nie udało się wczytać firewall.mp3 — gra będzie wyciszona.");
+        console.warn("[audio] Nie udało się wczytać cashify.mp3 — gra będzie wyciszona.");
       } else {
         console.warn(`[assets] Nie udało się wczytać: ${file.key}`);
       }

@@ -28,13 +28,23 @@ export class FallingItem extends Phaser.Physics.Arcade.Image {
     return ITEMS[this.itemType].valuePln;
   }
 
-  /** Aktywuje przedmiot danego typu u góry ekranu i nadaje mu spadek. */
-  spawn(type: ItemType, x: number, y: number): void {
+  /**
+   * Aktywuje przedmiot danego typu i nadaje mu spadek.
+   * @param fromHole — origin u góry sprite'a; (x,y) = wylot z otworu w kantorku.
+   */
+  spawn(
+    type: ItemType,
+    x: number,
+    y: number,
+    depth: number = BAG.depth.itemFront,
+    fromHole = false,
+  ): void {
     this.itemType = type;
     const def = ITEMS[type];
     const hasPng = this.scene.textures.exists(def.asset);
+    this.setOrigin(0.5, fromHole ? 0 : 0.5);
     this.enableBody(true, x, y, true, true);
-    this.setDepth(BAG.depth.itemFront);
+    this.setDepth(depth);
     this.setAlpha(1);
     this.setData("swallowing", false);
     this.setTexture(hasPng ? def.asset : TEXTURE.itemFallback);
@@ -42,6 +52,7 @@ export class FallingItem extends Phaser.Physics.Arcade.Image {
     else this.setTint(CATEGORY_TINT[def.category]);
     this.setDisplaySize(SPRITE.item.w, SPRITE.item.h);
     this.setVelocity(0, FALLING.speed);
+    (this.body as Phaser.Physics.Arcade.Body | null)?.updateFromGameObject();
   }
 
   /** Odbicie od zamkniętego worka: w górę i w bok od gracza. */

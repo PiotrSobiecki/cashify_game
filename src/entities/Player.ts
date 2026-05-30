@@ -112,7 +112,7 @@ export class Player extends Phaser.Physics.Arcade.Image {
     this.immuneUntil = until;
   }
 
-  /** Leczenie (FirewallRepair) — do pełni HP. */
+  /** Leczenie (power-up) — do pełni HP. */
   heal(amount: number): void {
     this.hp = Math.min(PLAYER.maxHp, this.hp + amount);
   }

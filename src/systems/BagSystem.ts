@@ -4,6 +4,8 @@ import { BAG, COLORS } from "../config";
 const BAG_DISPLAY_H = BAG.displayHeight;
 import type { Player } from "../entities/Player";
 import type { FallingItem } from "../entities/FallingItem";
+import { BOSS_DROP } from "../data/items";
+import { getBossPanelBottomY } from "../ui/BossEncounterDisplay";
 import { BagEnergy } from "./BagEnergy";
 
 /** Klucze sprite'ów worka (ładowane w BootScene z public/assets/bags/). */
@@ -126,6 +128,12 @@ export class BagSystem {
    * w czarne otwarcie (za sprite) i jest ciągnięty do mouthPoint.
    */
   updateItemLayer(item: FallingItem, dtSec: number): void {
+    // Sztabki bossa nad okienkiem kantoru — updateItemLayer nie może ich zrzucać na warstwę 7.
+    if (item.itemType === BOSS_DROP && item.y < getBossPanelBottomY()) {
+      item.setDepth(BAG.depth.bossDrop);
+      return;
+    }
+
     if (!this.hasSprites || !this.open) {
       item.setDepth(BAG.depth.itemFront);
       return;

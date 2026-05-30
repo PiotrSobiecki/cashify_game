@@ -9,7 +9,7 @@ export interface NpcDef {
   line: string;
 }
 
-/** Klucz = próg PLN dymka (100k przed bossem): 400k / 1,9 mln / 4,9 mln. */
+/** Klucz = próg PLN dymka (100 tys. przed bossem: 400k / 1,9 mln / 4,9 mln). */
 export const NPCS: Record<number, NpcDef> = {
   400_000: {
     key: "npc_jacek",

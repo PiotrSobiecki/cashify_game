@@ -1,5 +1,5 @@
 {
-  "name": "firewall-scores-worker",
+  "name": "cashify-scores-worker",
   "private": true,
   "type": "module",
   "scripts": {

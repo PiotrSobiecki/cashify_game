@@ -9,10 +9,10 @@ export const WIN_SCORE = WIN_TARGET_PLN;
 /** Twardy limit sesji (zabezpieczenie): 30:00. */
 export const SESSION_MAX_MS = 30 * 60 * 1000;
 
-/** Bossy: Jacek 0,5 mln · Weronika 2 mln · Jakub 5 mln (3. boss = meta + rundka 30 s). */
-export const BOSS_MILESTONES = [500_000, 2_000_000, 5_000_000] as const;
-/** Dymki z kwestią 100 tys. PRZED każdym bossem (zapowiedź postaci). */
-export const NPC_MILESTONES = [400_000, 1_900_000, 4_900_000] as const;
+/** Bossy: Jacek 0,5 mln · Weronika 2 mln · Jakub 5 mln. */
+export const BOSS_MILESTONES = [500_000, 2_500_000, 5_000_000] as const;
+/** Dymki NPC ~100 tys. przed każdym bossem. */
+export const NPC_MILESTONES = [400_000, 2_400_000, 4_900_000] as const;
 
 /** Faza bossa: 10 s deszczu specjalnych sztabek, wstrzymany normalny spawn. */
 export const BOSS_PHASE = {
@@ -60,6 +60,8 @@ export const BAG = {
     bag: 6,
     itemFront: 7,
     logo: 8,
+    /** Sztabki z otworu bossa — nad okienkiem kantoru (10–13), pod popupem NPC (19). */
+    bossDrop: 18,
   },
   /** Środek strefy łapania — otwarty worek (w górę od środka sprite'a). */
   catchCenterUp: 0.28,

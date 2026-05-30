@@ -166,21 +166,25 @@ export class GameScene extends Phaser.Scene {
     if (this.sys.game.device.input.touch) this.setupTouchControls();
   }
 
-  private spawnItem(x: number, type: ItemType, y = -20): void {
+  private spawnItem(
+    x: number,
+    type: ItemType,
+    y = -20,
+    depth: number = BAG.depth.itemFront,
+    fromHole = false,
+  ): void {
     if (this.ended) return;
     const item = this.items.get(x, y) as FallingItem | null;
     if (!item) return;
-    item.spawn(type, x, y);
+    item.spawn(type, x, y, depth, fromHole);
   }
 
-  /** Sztabka z okienka bossa — pozycja i animacja rzutu z lady. */
+  /** Sztabka wylatuje z otworu u dołu ramki bossa (nad scenografią kantoru). */
   private spawnBossDrop(): void {
-    const drop = this.bossDisplay?.getDropPoint() ?? {
-      x: Phaser.Math.Between(28, GAME_WIDTH - 28),
-      y: -20,
-    };
-    this.spawnItem(drop.x, BOSS_DROP, drop.y);
-    this.bossDisplay?.playThrow();
+    if (!this.bossDisplay?.isActive) return;
+    const drop = this.bossDisplay.getDropPoint();
+    this.spawnItem(drop.x, BOSS_DROP, drop.y, BAG.depth.bossDrop, true);
+    this.bossDisplay.playThrow();
   }
 
   update(time: number, delta: number): void {

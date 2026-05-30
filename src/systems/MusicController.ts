@@ -10,7 +10,7 @@ import { AUDIO } from "../config";
  * pętli i nie urywa się przy zmianie scen. M włącza/wyłącza go w każdej chwili.
  * Menu jest ciche. Klucz cache audio = klucz w registry; ścieżka z `public/`.
  */
-export const MUSIC_KEY = "firewallTrack";
+export const MUSIC_KEY = "cashifyTrack";
 
 export const musicPath = (): string => import.meta.env.BASE_URL + AUDIO.trackFile;
 
@@ -37,7 +37,7 @@ export class MusicController {
    */
   start(): void {
     if (!this.available) {
-      console.warn("[audio] Brak pliku firewall.mp3 — gra działa bez muzyki.");
+      console.warn("[audio] Brak pliku cashify.mp3 — gra działa bez muzyki.");
       return;
     }
     if (this.music?.isPlaying) return;
@@ -51,7 +51,7 @@ export class MusicController {
    */
   toggle(): boolean {
     if (!this.available) {
-      console.warn("[audio] Brak pliku firewall.mp3 — nie ma czego odtworzyć.");
+      console.warn("[audio] Brak pliku cashify.mp3 — nie ma czego odtworzyć.");
       return false;
     }
     if (this.music?.isPlaying) {
