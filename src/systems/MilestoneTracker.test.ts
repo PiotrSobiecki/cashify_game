@@ -6,23 +6,24 @@ describe("MilestoneTracker", () => {
     const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
     expect(m.crossed(499_999)).toEqual([]);
     expect(m.crossed(500_000)).toEqual([500_000]);
+    expect(m.crossed(500_000)).toEqual([500_000]);
+    m.markFired(500_000);
+    expect(m.crossed(500_000)).toEqual([]);
   });
 
-  it("fires each threshold only once", () => {
+  it("fires each threshold only once after markFired", () => {
     const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
     expect(m.crossed(2_500_000)).toEqual([500_000, 2_000_000]);
+    m.markFired(500_000);
+    m.markFired(2_000_000);
     expect(m.crossed(3_000_000)).toEqual([]);
   });
 
-  it("does not re-fire after the score dips and climbs back", () => {
-    const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
-    m.crossed(5_000_000);
-    expect(m.crossed(4_000_000)).toEqual([]);
-    expect(m.crossed(5_000_000)).toEqual([]);
-  });
-
-  it("reports multiple thresholds crossed in one jump", () => {
+  it("does not re-fire after markFired even if score dips", () => {
     const m = new MilestoneTracker([500_000, 2_000_000, 5_000_000]);
     expect(m.crossed(5_000_000)).toEqual([500_000, 2_000_000, 5_000_000]);
+    for (const t of [500_000, 2_000_000, 5_000_000]) m.markFired(t);
+    expect(m.crossed(4_000_000)).toEqual([]);
+    expect(m.crossed(5_000_000)).toEqual([]);
   });
 });
