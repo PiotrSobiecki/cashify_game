@@ -25,7 +25,7 @@ import { RaceClock } from "../systems/RaceClock";
 import { MilestoneTracker } from "../systems/MilestoneTracker";
 import { resolveCatch } from "../systems/bagCatch";
 import { BOSS_DROP, isCollectibleItemType, randomWeightedItemType, type ItemType } from "../data/items";
-import { NPCS, WIN_NPC } from "../data/npc";
+import { getNpcForMilestone, WIN_NPC } from "../data/npc";
 import { CurrencyBackdrop } from "../ui/CurrencyBackdrop";
 import { HUD } from "../ui/HUD";
 import { EmployeePopup } from "../ui/EmployeePopup";
@@ -72,6 +72,8 @@ export class GameScene extends Phaser.Scene {
   private bossDisplay?: BossEncounterDisplay;
   private bossCount = 0; // który to boss (0→Jacek, 1→Weronika, 2→Jakub)
   private winStarted = false; // sekwencja wygranej po 10 mln zł (rundka honorowa)
+  /** Dymki NPC czekające, gdy popup jest zajęty (kolejka). */
+  private npcQueue: number[] = [];
 
   private music!: MusicController;
   private sfx!: Sfx;
@@ -103,6 +105,7 @@ export class GameScene extends Phaser.Scene {
     this.bossActive = false;
     this.bossCount = 0;
     this.winStarted = false;
+    this.npcQueue = [];
 
     this.bg = new CurrencyBackdrop(this);
     this.score = new ScoreSystem();
@@ -314,8 +317,17 @@ export class GameScene extends Phaser.Scene {
   /** Po zmianie wyniku: progi bossów i NPC (każdy raz na rundę). */
   private checkMilestones(): void {
     const score = this.score.score;
-    if (this.bossTracker.crossed(score).length > 0) this.startBossPhase();
-    for (const m of this.npcTracker.crossed(score)) this.showNpc(m);
+
+    const bosses = this.bossTracker.crossed(score);
+    if (bosses.length > 0) {
+      this.startBossPhase();
+      for (const b of bosses) this.bossTracker.markFired(b);
+    }
+
+    for (const m of this.npcTracker.crossed(score)) {
+      if (!this.npcQueue.includes(m)) this.npcQueue.push(m);
+    }
+    this.flushNpcQueue();
   }
 
   /** Start fazy bossa: scena z okienkiem + deszcz sztabek z lady. */
@@ -349,13 +361,22 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(GRACE_MS, () => this.end("win"));
   }
 
-  /** Popup pracownika kantoru: zatrzymuje zegar wyścigu na czas wyświetlenia. */
-  private showNpc(milestone: number): void {
-    const npc = NPCS[milestone];
-    if (!npc || this.popup.isActive) return;
+  /** Kolejka dymków — jeden po drugim, próg oznaczany dopiero po pokazaniu. */
+  private flushNpcQueue(): void {
+    if (this.popup.isActive || this.npcQueue.length === 0) return;
+
+    const milestone = this.npcQueue.shift()!;
+    const npc = getNpcForMilestone(milestone);
+    if (!npc) {
+      this.flushNpcQueue();
+      return;
+    }
+
+    this.npcTracker.markFired(milestone);
     this.clock.pause(this.time.now);
     this.popup.show(npc.key, npc.name, npc.line, NPC_POPUP_MS, () => {
       this.clock.resume(this.time.now);
+      this.flushNpcQueue();
     });
   }
 

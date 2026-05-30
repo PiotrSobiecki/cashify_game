@@ -9,7 +9,7 @@ export const WIN_SCORE = WIN_TARGET_PLN;
 /** Twardy limit sesji (zabezpieczenie): 30:00. */
 export const SESSION_MAX_MS = 30 * 60 * 1000;
 
-/** Bossy: Jacek 0,5 mln · Weronika 2 mln · Jakub 5 mln. */
+/** Bossy: Jacek 0,5 mln · Weronika 2,5 mln · Jakub 5 mln. */
 export const BOSS_MILESTONES = [500_000, 2_500_000, 5_000_000] as const;
 /** Dymki NPC ~100 tys. przed każdym bossem. */
 export const NPC_MILESTONES = [400_000, 2_400_000, 4_900_000] as const;

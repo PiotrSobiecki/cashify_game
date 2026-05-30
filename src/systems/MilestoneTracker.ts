@@ -1,18 +1,19 @@
 /**
  * Śledzi progi punktowe (bossy / NPC z config).
- * Każdy próg odpala się DOKŁADNIE RAZ na rundę: po przekroczeniu zostaje
- * trwale oznaczony, więc spadek wyniku (kara −15 po śmierci) i ponowne
- * dojście do progu już go nie wyzwala. Czysta logika — bez Phasera.
+ * `crossed` tylko zwraca kandydatów — `markFired` po udanym pokazaniu,
+ * żeby nie „zużyć” progu gdy popup się nie wyświetlił.
  */
 export class MilestoneTracker {
   private readonly fired = new Set<number>();
 
   constructor(private readonly thresholds: number[]) {}
 
-  /** Zwraca progi przekroczone właśnie teraz (każdy najwyżej raz w całej rundzie). */
+  /** Progi spełnione przy tym wyniku, jeszcze nie oznaczone jako obsłużone. */
   crossed(score: number): number[] {
-    const now = this.thresholds.filter((t) => score >= t && !this.fired.has(t));
-    for (const t of now) this.fired.add(t);
-    return now;
+    return this.thresholds.filter((t) => score >= t && !this.fired.has(t));
+  }
+
+  markFired(threshold: number): void {
+    this.fired.add(threshold);
   }
 }
